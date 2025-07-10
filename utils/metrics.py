@@ -13,6 +13,47 @@ from jax import vmap
 from ott.geometry import pointcloud
 from ott.tools.sinkhorn_divergence import sinkhorn_divergence
 
+def param_error(true_param, model_param):
+    """
+    Compute the relative estimation error between true and learned parameters.
+    
+    Args:
+        true_param (dict): Contains 'weights' (matrix), 'biases' (vector), and 'log_noise_scale' (vector).
+        learned_param (dict): Same structure as true_param.
+    
+    Returns:
+        float: The overall relative error.
+    """
+    learned_param = model_param._store
+    fixed = model_param._fixed
+    
+    # Extract parameters
+    A_true, b_true, D_true = true_param['weights'], true_param['biases'], true_param['log_noise_scale']
+    A_learned, b_learned, D_learned = learned_param['weights'], learned_param['biases'], learned_param['log_noise_scale']
+    
+    # Initialize error dictionary
+    error_dict = {}
+    
+    # Compute errors only for non-fixed indices
+    mask_A = jnp.ones_like(A_true, dtype=bool)
+    if 'weights' in fixed:
+        mask_A = mask_A.at[fixed['weights']].set(False)
+    A_error = jnp.linalg.norm((A_true - A_learned) * mask_A, 'fro') / (jnp.linalg.norm(A_true * mask_A, 'fro') + 1e-8)
+    error_dict['weights'] = A_error
+    
+    mask_b = jnp.ones_like(b_true, dtype=bool)
+    if 'biases' in fixed:
+        mask_b = mask_b.at[fixed['biases']].set(False)
+    b_error = jnp.linalg.norm((b_true - b_learned) * mask_b, 2) / (jnp.linalg.norm(b_true * mask_b, 2) + 1e-8)
+    error_dict['biases'] = b_error
+    
+    mask_D = jnp.ones_like(D_true, dtype=bool)
+    if 'log_noise_scale' in fixed:
+        mask_D = mask_D.at[fixed['log_noise_scale']].set(False)
+    D_error = jnp.linalg.norm((D_true - D_learned) * mask_D, 2) / (jnp.linalg.norm(D_true * mask_D, 2) + 1e-8)
+    error_dict['log_noise_scale'] = D_error
+    
+    return error_dict
 
 def squared_norm(x, y):
     # handle singular dims

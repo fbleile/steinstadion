@@ -47,6 +47,6 @@ def get_all_missing_treks(mask):
     # Get edge list as tuples
     edge_list = list(inv_trek_graph.edges)
     
-    return edge_list
+    return nx_graph, edge_list
     
     

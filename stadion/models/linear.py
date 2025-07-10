@@ -55,14 +55,14 @@ class LinearSDE(KDSMixin, SDE):
         self.marg_indeps = None
 
 
-    def init_param(self, d, scale=1e-6, fix_speed_scaling=True, marg_indeps=None, adapt_notreks = True):
+    def init_param(self, d, scale=1e-6, fix_speed_scaling=True, marg_indeps=None, adapt_dep = True):
         """
         Samples random initialization of the SDE model parameters.
         See :func:`~stadion.inference.KDSMixin.init_param`.
         """
         
         shape = {
-            "weights": jnp.zeros((d, d)),
+            "weights": jnp.zeros((d, d)), # - jnp.diag(jnp.ones((d,))),
             "biases": jnp.zeros((d,)),
             "log_noise_scale": -2 * jnp.ones((d,)),
         }
@@ -71,13 +71,15 @@ class LinearSDE(KDSMixin, SDE):
         param = tree_init_normal(subk, shape, scale=scale)
         
         self.marg_indeps = marg_indeps
-        self.marg_indeps_adapted = self.marg_indeps[0]
+        self.marg_indeps_adapted = self.marg_indeps
         
         diag_idx = jnp.diag_indices(d)
         marg_row_idx, marg_col_idx = marg_indeps_to_indices(self.marg_indeps)
         marg_indeps_idx = jnp.stack(\
                                     [jnp.concatenate([marg_row_idx, marg_col_idx]),\
                                      jnp.concatenate([marg_col_idx, marg_row_idx])], axis=1)
+            
+        # print(f'marg_indeps_idx: {marg_indeps_idx} \n marg_indeps: {self.marg_indeps}')
         # Convert diag_idx (tuple of arrays) to a suitable format for concatenation
         diag_idx_merged = jnp.stack(diag_idx, axis=1)  # Convert to 2D array with shape (d, 2)
         

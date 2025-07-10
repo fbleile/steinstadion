@@ -23,7 +23,7 @@ from sample import make_data
 
 from utils.parse import load_config, expand_config
 from utils.version_control import get_gpu_info, get_gpu_info2
-from utils.metrics import make_mse, make_wasserstein
+from utils.metrics import make_mse, make_wasserstein, param_error
 from utils.NN_dim_bandwidth import NeuralNetwork
 
 from stadion.models import LinearSDE
@@ -61,8 +61,8 @@ def wandb_run_algo(key, train_targets, test_targets, config=None, t_init=None, l
         subk,
         train_targets.data,
         targets=train_targets.intv,
-        marg_indeps=jnp.array([train_targets.marg_indeps]*n_train_envs),
-        bandwidth=config["bandwidth"],
+        marg_indeps=jnp.array([train_targets.marg_indeps]),
+        bandwidth=config["k_param"],
         objective_fun=config["objective_fun"],
         estimator=config["estimator"],
         learning_rate=config["learning_rate"],
@@ -70,9 +70,12 @@ def wandb_run_algo(key, train_targets, test_targets, config=None, t_init=None, l
         batch_size=config["batch_size"],
         reg=config["reg_strength"],
         dep=config["inductive_bias"]["dep_strength"],
+        adapt_dep=config["inductive_bias"]["adapt_dep"],
+        adapt_every=config["inductive_bias"]["adapt_every"],
         warm_start_intv=True,
         verbose=10,
-        k_reg=config["kernel_reg"]
+        k_reg=config["kernel_reg"],
+        q=config["k_param"],
     )
     print(f"done.", flush=True)
     
@@ -138,6 +141,13 @@ def wandb_run_algo(key, train_targets, test_targets, config=None, t_init=None, l
     
     _, log_dict["dep_ratio"] = model.get_dep_ratio(key, model.param, n_samples=2000)
     
+    A = train_targets.true_param["weights"]
+    B = A @ jnp.diag(-1.0 / jnp.diag(A))
+    
+    print(f'True params:\n{B}\nLearned params:\n{model.param._store["weights"]}\nDiff:\n{jnp.abs(B - model.param._store["weights"])}')
+    
+    log_dict["param_error"] = param_error(train_targets.true_param, model.param)
+    
     print(f"End of run_algo after total walltime: "
           f"{str(datetime.timedelta(seconds=round(time.time() - t_run_algo)))}",
           flush=True)
@@ -185,7 +195,7 @@ def single_debug_run(test = False):
 
     # optimization
     debug_config["batch_size"] = 192
-    debug_config["bandwidth"] = 1.0 # 5.0
+    debug_config["k_param"] = 1.0 # 5.0
     debug_config["reg_strength"] = 0.1
     
     debug_config["dep_strength"] = 10
@@ -287,7 +297,7 @@ def hyperparam_tuning(seed, data_config_str = None, model_config_str = None):
             model_log = {}
             model_log["model"] = config["model"]
             model_log["objective_fun"] = config["objective_fun"]
-            model_log["bandwidth"] = config["bandwidth"]
+            model_log["k_param"] = config["k_param"]
             model_log["steps"] = config["steps"]
             model_log["model"] = config["model"]
             model_log["inductive_bias"] = config["inductive_bias"]
@@ -320,7 +330,7 @@ def run_single_config(config_and_key):
     config["d"] = train_targets.data[0].shape[-1]
 
     # Prepare input for the model
-    input_data = torch.tensor([[config["d"], config["bandwidth"]]], dtype=torch.float32)
+    input_data = torch.tensor([[config["d"], config["k_param"]]], dtype=torch.float32)
     
     # Make the prediction
     with torch.no_grad():
@@ -332,7 +342,7 @@ def run_single_config(config_and_key):
         "data_key": data_key, 
         "model": config["model"],
         "objective_fun": config["objective_fun"],
-        "bandwidth": config["bandwidth"],
+        "k_param": config["k_param"],
         "steps": config["steps"],
         "inductive_bias": config["inductive_bias"]
     }
@@ -382,6 +392,7 @@ def hyperparam_tuning_wandb(seed, data_config_str=None, model_config_str=None):
         data_model_log = {
             "id": data_config["id"],
             "n_vars": data_config["n_vars"],
+            "graph": data_config["graph"],
             "sparsity": data_config["sparsity"],
             "marg_indeps": data_config["marg_indeps"]
         }
@@ -423,11 +434,11 @@ def hyperparam_tuning_wandb(seed, data_config_str=None, model_config_str=None):
 
 if __name__ == "__main__":
     
-    data_config_str = "/Users/bleile/Master/Thesis Work/CausalDiffusion/config/dev/linear20_SCM.yaml"
+    data_config_str = "/Users/bleile/Master/Thesis Work/CausalDiffusion/config/dev/linear20_SDE.yaml"
     model_master_config_str = "/Users/bleile/Master/Thesis Work/CausalDiffusion/config/dev/models.yaml"
     
-    logs = hyperparam_tuning_wandb(118, data_config_str, model_master_config_str)
+    logs = hyperparam_tuning_wandb(128, data_config_str, model_master_config_str)
     
     df = pd.DataFrame(logs)
-    df.replace({r'\n': ' ', r'\r': ' '}, regex=True, inplace=True)
+    # df.replace({r'\n': ' ', r'\r': ' '}, regex=True, inplace=True)
     df.to_csv('output.csv', mode='a', header=not pd.io.common.file_exists('output.csv'), index=False)

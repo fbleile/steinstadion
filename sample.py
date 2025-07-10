@@ -15,7 +15,7 @@ def make_data(*, key, config):
         standardizer = make_target_standardizer(train_tars.data[0])
         
         # remember eigenvalue information for analysis
-        mat = train_tars.true_param[0]
+        mat = train_tars.true_param["weights"]
         meta_data["mat_eigenvals"] = onp.sort(onp.real(onp.linalg.eigvals(mat)))
 
         # remember simulation logs for analysis
@@ -27,7 +27,7 @@ def make_data(*, key, config):
         standardizer = make_target_standardizer(train_tars.data[0], ignore=True)
 
         # remember eigenvalue information for analysis
-        mat = train_tars.true_param[0]
+        mat = train_tars.true_param["weights"]
         meta_data["mat_eigenvals"] = onp.sort(onp.real(onp.linalg.eigvals(mat)))
 
         # remember simulation logs for analysis

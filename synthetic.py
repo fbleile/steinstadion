@@ -167,22 +167,39 @@ def make_mask(key, config):
         else:
             raise ValueError(f"Unknown random graph structure model: {config['graph']}")
         
-        miss_treks = get_all_missing_treks(mask)
-        if len(miss_treks) == 0:
-            continue
+        G, miss_treks = get_all_missing_treks(mask)
         
+        # if marg_indeps = -1 we accept every mask
         if config["marg_indeps"] == -1:
             print(f'missing treks: {len(miss_treks)}')
             marg_indeps = jnp.array(miss_treks)
             break
-        elif config["marg_indeps"] <= len(miss_treks):
-            key, subk = random.split(key)
-            marg_indeps = random.choice(subk, 
-                              jnp.array(miss_treks),  # Convert to JAX array
-                              shape=(config["marg_indeps"],), 
-                              replace=False)  # No replacement
-            # marg_indeps = miss_treks
-            break
+        
+        exp_W = jax.scipy.linalg.expm(mask)
+        A = G.to_undirected(reciprocal=False)
+        # print(f'G.edges = {list(G.edges)}')
+        # print(f'A.edges = {list(A.edges)}')
+        components = list(nx.connected_components(A))
+        # print(f'A components = {components}')
+        min_comp_len = len(min(components, key=len)) if components else None
+        
+        # is acyclic
+        # if not enough missing treks
+        # if to small separated components (e.g. no isolated comps)
+        if len(miss_treks) < config["marg_indeps"]:
+            continue
+        if nx.is_directed_acyclic_graph(G):
+            continue
+        if min_comp_len <= max(d / 20, 1.):
+            # print(min_comp_len)
+            continue
+        
+        key, subk = random.split(key)
+        marg_indeps = random.choice(subk, 
+                          jnp.array(miss_treks),  # Convert to JAX array
+                          shape=(min(len(miss_treks),config["marg_indeps"]),), 
+                          replace=False)  # No replacement
+        break
     
     exp_W = jax.scipy.linalg.expm(mask)
     trek_W = jnp.dot(exp_W.T, exp_W)
@@ -256,7 +273,7 @@ def make_linear_model_parameters(key, config, mask):
             w = jnp.array(project_closest_stable_matrix(onp.array(w), eps=config["adjust_eps"]))
         else:
             raise KeyError(f"Must specify `adjust_eps` when `adjust` is set to `project`.")
-
+            
     elif config["adjust"] is None:
         pass
     else:
@@ -266,7 +283,7 @@ def make_linear_model_parameters(key, config, mask):
     eigenvals_check = onp.real(onp.linalg.eigvals(onp.array(w)))
     assert onp.all(eigenvals_check <= - (config["dynamic_range_eps"] if "dynamic_range_eps" in config else 0)) + 1e-3, \
         f"Eigenvalues positive:\nmat\n{w}\neigenvalues:\n{eigenvals_check}"
-
+    
     return dict(w1=w, b1=biases, c1=scales)
 
 
@@ -420,7 +437,7 @@ def synthetic_sde_data(key, config):
                 intv=intv_msks,
                 intv_param=intv_params,
                 marg_indeps=marg_indeps,
-                true_param=jnp.tile(true_theta["w1"], (intv_msks.shape[0], 1, 1)),
+                true_param= model.param._store, # jnp.tile(true_theta["w1"], (intv_msks.shape[0], 1, 1)),
                 traj=traj,
             ).copy(),
             log,

@@ -49,13 +49,28 @@ def squared_norm(x, y):
         k = k.squeeze(-1)
     return k
 
+def w_0(x, y):
+    return 1 + x @ y
+
 def w_1(x):
     return jnp.sqrt(1 + jnp.sum(x ** 2, axis=-1))
+
+def w_q(x, q):
+    return (1 + jnp.sum(x ** 2, axis=-1)) ** (1 - q)
 
 def w_2(x):
     return 1 + jnp.sum(x ** 2, axis=-1)
 
-def diff_rbf_rbf_kernel(x, y, *, bandwidth):
+def imq_kernel(x, y, *, q = 2):
+    w_x = w_1(x)
+    w_y = w_1(y)
+    w_qx = w_q(x, q)
+    w_qy = w_q(y, q)
+    w_0_xy = w_0(x, y)
+    w_1_xy = w_1(x-y)
+    return w_qx * (1/(w_1_xy * w_x * w_y) + w_0_xy / (w_x * w_y)) * w_qy
+
+def rbf_kernel_tilted(x, y, *, bandwidth):
     assert type(bandwidth) == float or bandwidth.ndim == 0
 
     # Compute the RBF kernel term
@@ -195,11 +210,12 @@ class KDSMixin(SDE, ABC):
         batch_size=128,
         reg=0.001,
         dep=0.001,
-        adapt_notreks = False,
+        adapt_dep = False,
         adapt_every = 2000,
         warm_start_intv=True,
         verbose=10,
         k_reg=0.2,
+        q = 2,
     ):
         """
         Args:
@@ -265,7 +281,7 @@ class KDSMixin(SDE, ABC):
         sharding = PositionalSharding(mesh)
 
         # initialize parameters and load to device (replicate across devices)
-        param = self.init_param(self.n_vars, marg_indeps=marg_indeps, adapt_notreks=adapt_notreks)
+        param = self.init_param(self.n_vars, marg_indeps=marg_indeps, adapt_dep=adapt_dep)
 
         key, subk = random.split(key)
         intv_param = self.init_intv_param(self.n_vars, n_envs=n_envs, targets=targets,
@@ -285,9 +301,16 @@ class KDSMixin(SDE, ABC):
             # init kernel
             kernel = partial(rbf_kernel, bandwidth=bandwidth)
             loss_fun = kds_loss(self.f, self.sigma, kernel, estimator=estimator)
-        elif objective_fun == "skds":
+        elif objective_fun == "skds_rbf_tilt":
             # init kernel
-            kernel = partial(diff_rbf_rbf_kernel, bandwidth=bandwidth)
+            kernel = partial(rbf_kernel_tilted, bandwidth=bandwidth)
+            loss_fun = skds_loss(self.f, self.sigma, kernel, estimator=estimator)
+        elif objective_fun == "skds_rbf":
+            # init kernel
+            kernel = partial(rbf_kernel, bandwidth=bandwidth)
+            loss_fun = skds_loss(self.f, self.sigma, kernel, estimator=estimator)
+        elif objective_fun == "skds_imq":
+            kernel = partial(imq_kernel, q=q)
             loss_fun = skds_loss(self.f, self.sigma, kernel, estimator=estimator)
         else:
             raise KeyError(f"Unknown objective function `{objective_fun}`")
@@ -302,7 +325,7 @@ class KDSMixin(SDE, ABC):
             intv_param_.targets = tree_map(select, intv_param_.targets)
 
             # compute mean KDS loss over environments
-            loss = k_reg * loss_fun(batch_.x, param_, intv_param_) # 
+            loss = loss_fun(batch_.x, param_, intv_param_) # k_reg * 
             assert loss.ndim == 0
 
             # compute any regularizers
@@ -383,7 +406,7 @@ class KDSMixin(SDE, ABC):
             # update average of training metrics
             logs = update_ave(logs, logs_t)
             
-            if adapt_notreks and not t % adapt_every and t != 0:
+            if adapt_dep and not t % adapt_every and t != 0:
                 self.marg_indeps_adapted, _ = self.get_dep_ratio(key, param)
 
             if verbose and ((not t % log_every and t != 0) or t == steps):
