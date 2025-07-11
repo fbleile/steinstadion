@@ -432,6 +432,6 @@ if __name__ == "__main__":
     
     logs = hyperparam_tuning_wandb(128, data_config_str, model_master_config_str)
     
-    df = pd.DataFrame(logs)
+    # df = pd.DataFrame(logs)
     # df.replace({r'\n': ' ', r'\r': ' '}, regex=True, inplace=True)
-    df.to_csv('output.csv', mode='a', header=not pd.io.common.file_exists('output.csv'), index=False)
+    # df.to_csv('output.csv', mode='a', header=not pd.io.common.file_exists('output.csv'), index=False)
