@@ -7,7 +7,9 @@ import numpy as onp
 import math
 
 import jax
-from jax import numpy as jnp, random, tree_map
+from jax import numpy as jnp, random
+from jax.tree_util import tree_map
+
 from jax.experimental import mesh_utils
 from jax.sharding import PositionalSharding
 from optax._src import linear_algebra

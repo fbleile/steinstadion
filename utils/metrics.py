@@ -13,6 +13,7 @@ from jax import vmap
 from ott.geometry import pointcloud
 from ott.tools.sinkhorn_divergence import sinkhorn_divergence
 
+@jax.jit
 def param_error(true_param, model_param):
     """
     Compute the relative estimation error between true and learned parameters.

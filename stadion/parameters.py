@@ -5,7 +5,8 @@ import copy
 
 import jax #test
 import jax.numpy as jnp
-from jax.tree_util import register_pytree_node_class
+from jax.tree_util import tree_map, register_pytree_node_class
+
 
 
 __AUX_FIELDS__ = [
@@ -198,7 +199,7 @@ class InterventionParameters(Parameters):
             if not jax.tree_util.tree_structure(axes) == jax.tree_util.tree_structure(tree):
                 axes = jax.tree_util.tree_map(lambda _: axes, tree)
 
-            return jax.tree_map(masker, tree, targets, values, axes)
+            return tree_map(masker, tree, targets, values, axes)
 
 # class MarginalIndepParameter():
 #     """

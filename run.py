@@ -23,7 +23,7 @@ from sample import make_data
 
 from utils.parse import load_config, expand_config
 from utils.version_control import get_gpu_info, get_gpu_info2
-from utils.metrics import make_mse, make_wasserstein, param_error
+from utils.metrics import make_mse, make_wasserstein
 from utils.NN_dim_bandwidth import NeuralNetwork
 
 from stadion.models import LinearSDE
@@ -140,13 +140,6 @@ def wandb_run_algo(key, train_targets, test_targets, config=None, t_init=None, l
     log_dict["avg_wasser_test"], log_dict["med_wasser_test"], log_dict["full_wasser_test"]= wasserstein_accuracy_test(subk, test_targets, intv_theta_test)
     
     _, log_dict["dep_ratio"] = model.get_dep_ratio(key, model.param, n_samples=2000)
-    
-    A = train_targets.true_param["weights"]
-    B = A @ jnp.diag(-1.0 / jnp.diag(A))
-    
-    print(f'True params:\n{B}\nLearned params:\n{model.param._store["weights"]}\nDiff:\n{jnp.abs(B - model.param._store["weights"])}')
-    
-    log_dict["param_error"] = param_error(train_targets.true_param, model.param)
     
     print(f"End of run_algo after total walltime: "
           f"{str(datetime.timedelta(seconds=round(time.time() - t_run_algo)))}",
@@ -434,7 +427,7 @@ def hyperparam_tuning_wandb(seed, data_config_str=None, model_config_str=None):
 
 if __name__ == "__main__":
     
-    data_config_str = "/Users/bleile/Master/Thesis Work/CausalDiffusion/config/dev/linear20_SDE.yaml"
+    data_config_str = "/Users/bleile/Master/Thesis Work/CausalDiffusion/config/dev/linear10.yaml"
     model_master_config_str = "/Users/bleile/Master/Thesis Work/CausalDiffusion/config/dev/models.yaml"
     
     logs = hyperparam_tuning_wandb(128, data_config_str, model_master_config_str)

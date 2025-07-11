@@ -6,7 +6,9 @@ warnings.formatwarning = lambda msg, category, path, lineno, file: f"{path}:{lin
 
 import copy
 from functools import partial
-from jax import random, jit, tree_map
+from jax import random, jit
+from jax.tree_util import tree_map
+
 import jax.numpy as jnp
 import numpy as onp
 from utils.parse import timer

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from jax import numpy as jnp, random, tree_map
+from jax import numpy as jnp, random
+from jax.tree_util import tree_map
+
 import networkx as nx
 
 from itertools import combinations

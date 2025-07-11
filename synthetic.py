@@ -218,9 +218,9 @@ def make_mask(key, config):
     plt.text(0.5, 0.95, f'marg_indeps:\n{marg_indeps_text}', fontsize=12, ha='center', va='center', transform=plt.gca().transAxes)
 
 
-    nx.draw(G, with_labels=True, node_size=500, node_color='lightblue', font_size=12, font_weight='bold')
-    plt.title("Graph Representation of Adjacency Matrix")
-    plt.show()
+    # nx.draw(G, with_labels=True, node_size=500, node_color='lightblue', font_size=12, font_weight='bold')
+    # plt.title("Graph Representation of Adjacency Matrix")
+    # plt.show()
     
     return mask, marg_indeps
 

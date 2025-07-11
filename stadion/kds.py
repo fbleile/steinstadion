@@ -1,7 +1,8 @@
 from functools import partial
 
 import jax
-from jax import vmap, tree_map
+from jax import vmap
+from jax.tree_util import tree_map
 import jax.numpy as jnp
 from jax import jacfwd
 

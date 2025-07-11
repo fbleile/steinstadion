@@ -7,7 +7,9 @@ import copy
 import numpy as onp
 import jax
 from jax import vmap
-from jax import numpy as jnp, lax, random, tree_map
+from jax import numpy as jnp, lax, random
+from jax.tree_util import tree_map
+
 from functools import partial
 from stadion.crosshsic import fast_hsic_test
 
