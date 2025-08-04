@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from stadion.parameters import ModelParameters, InterventionParameters
 from stadion.sde import SDE
 from stadion.inference import KDSMixin
-from stadion.utils import to_diag, tree_global_norm, tree_init_normal, tree_variance_initialization
+from stadion.utils.utils import to_diag, tree_global_norm, tree_init_normal, tree_variance_initialization
 
 
 class MLPSDE(KDSMixin, SDE):
@@ -31,18 +31,21 @@ class MLPSDE(KDSMixin, SDE):
     
     def __init__(
         self,
+        key,
         sparsity_regularizer="both",
         hidden_size=8,
         activation="sigmoid",
         init_distribution="uniform",
         init_mode="fan_in",
         sde_kwargs=None,
+        dependency_regularizer="None",
     ):
 
         sde_kwargs = sde_kwargs or {}
         SDE.__init__(self, **sde_kwargs)
 
         self.sparsity_regularizer = sparsity_regularizer
+        self.dependency_regularizer = dependency_regularizer
 
         if activation == "tanh":
             self.nonlin = jnp.tanh
@@ -58,9 +61,12 @@ class MLPSDE(KDSMixin, SDE):
         self.hidden_size = hidden_size
         self.init_distribution = init_distribution
         self.init_mode = init_mode
+        self.key, subk = random.split(key)
+        
+        self.marg_indeps = None
 
 
-    def init_param(self, key, d, scale=1e-6, fix_speed_scaling=True):
+    def init_param(self, d, scale=1e-6, fix_speed_scaling=True, marg_indeps=None, adapt_dep=None):
         """
         Samples random initialization of the SDE model parameters.
         See :func:`~stadion.inference.KDSMixin.init_param`.
@@ -77,7 +83,9 @@ class MLPSDE(KDSMixin, SDE):
 
         _initializer = functools.partial(tree_variance_initialization, scale=scale, mode=self.init_mode,
                                          distribution=self.init_distribution)
-        param = vmap(_initializer, (0, 0), 0)(jnp.array(random.split(key, d)), shape)
+        
+        self.key, subk = random.split(self.key)
+        param = vmap(_initializer, (0, 0), 0)(jnp.array(random.split(self.key, d)), shape)
 
         if fix_speed_scaling:
             return ModelParameters(
@@ -94,7 +102,7 @@ class MLPSDE(KDSMixin, SDE):
 
 
 
-    def init_intv_param(self, key, d, n_envs=None, scale=1e-6, targets=None, x=None):
+    def init_intv_param(self, d, n_envs=None, scale=1e-6, targets=None, x=None):
         """
         Samples random initialization of the intervention parameters.
         See :func:`~stadion.inference.KDSMixin.init_intv_param`.
@@ -106,7 +114,8 @@ class MLPSDE(KDSMixin, SDE):
             "shift": jnp.zeros(vec_shape),
             "log_scale": jnp.zeros(vec_shape),
         }
-        intv_param = tree_init_normal(key, shape, scale=scale)
+        self.key, subk = random.split(self.key)
+        intv_param = tree_init_normal(self.key, shape, scale=scale)
 
         # if provided, store intervened variables for masking
         if targets is not None:
@@ -122,8 +131,19 @@ class MLPSDE(KDSMixin, SDE):
             intv_param["shift"] += mean_shift
 
         return InterventionParameters(parameters=intv_param, targets=targets)
-
-
+    
+    def init_intv_theta(self, shape, scale=1.0):
+        # pytree of [n_envs, d, ...]
+        # learned intervention effect parameters
+        # vec_shape = (n_envs, d) if n_envs is not None else (d,)
+        # shape = {
+        #     "shift": jnp.zeros(vec_shape),
+        #     "log_scale": jnp.zeros(vec_shape),
+        # }
+        self.key, subk = random.split(self.key)
+        intv_theta = tree_init_normal(self.key, shape, scale=scale)
+        return intv_theta  
+    
     """
     Model
     """
@@ -266,3 +286,6 @@ class MLPSDE(KDSMixin, SDE):
         else:
             raise ValueError(f"Unknown regularizer `{self.regularize_sparsity}`")
         return reg
+    
+    def regularize_dependence(self, x, param, intv_param):
+        return 0

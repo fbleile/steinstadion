@@ -19,7 +19,7 @@ from stadion.sde import SDE
 from stadion.kds import kds_loss
 from stadion.skds import skds_loss
 from stadion.data import make_dataloader
-from stadion.utils import update_ave, retrieve_ave, tree_isnan
+from stadion.utils.utils import update_ave, retrieve_ave, tree_isnan
 
 jax.config.update("jax_traceback_filtering", "off")
 
@@ -206,6 +206,7 @@ class KDSMixin(SDE, ABC):
         marg_indeps=None,
         bandwidth=5.0,
         objective_fun="kds",
+        kernel="rbf",
         estimator="linear",
         learning_rate=0.003,
         steps=10000,
@@ -216,63 +217,7 @@ class KDSMixin(SDE, ABC):
         adapt_every = 2000,
         warm_start_intv=True,
         verbose=10,
-        k_reg=0.2,
-        q = 2,
     ):
-        """
-        Args:
-            key (PRNGKey)
-            x (Dataset): This can be any of:
-                ndarray of shape ``[n, d]`` for a single dataset,
-                ndarray of shape ``[m, n, d]`` for multiple datasets, or
-                list of length ``m`` of ndarrays of shape ``[:, d]`` for
-                multiple datasets
-                with different numbers of samples.
-            targets (ndarray, optional): Known intervention targets provided
-                as a binary, multi-hot indicator vector and aligned with input ``x``
-                of the form: ndarray of shape ``[d,]`` encoding which
-                variables were intervened upon, ndarray of shape ``[m, d]``
-                encoding which variables were intervened upon in each
-                environment, or list of length ``m` of ndarrays of shape
-                ``[d]``. When ``None`` and providing a single dataset in
-                ``x``, defaults to no variables being intervened upon,
-                so ``targets[...] == 0`` (in causality terms, the observational
-                setting). When ``None`` and providing multiple datasets
-                in ``x``, raises an Exception: we currently enforce
-                the targets of interventional datasets to be known,
-                since we have not yet tested the performance when not knowing
-                the targets. To explicitly allow 'unknown' targets for the
-                interventional datasets, you can provide ``targets[0, :] == 0``
-                and ``targets[1:, :] == 1``, which does not mask the
-                intervention parameters for any variables.
-            marg_indeps (ndarray, optional): list of length m for multiple data
-                sets with each element is list of 2-tuples of known marginal
-                independencies provided as 2-tuples of indices aligned with
-                the indput ``x``.
-            bandwidth (float, optional): Bandwidth of the RBF kernel.
-            estimator (str, optional): Estimator for the KDS loss. Options:
-                ``u-statistic``, ``v-statistic``, ``linear`` (Default:
-                ``linear``). The u-statistic/v-statistic estimates scale
-                quadratically in the dataset size ``n``, the only difference
-                being that the v-statistic does not drop the diagonals in
-                the double sum. The linear estimator has higher variance
-                but can be advantageous in large-scale settings.
-            learning_rate (float, optional): Learning rate for Adam.
-            steps (int, optional): Number of optimization steps.
-            batch_size (int, optional): Batch size for data loader.
-            reg (float, optional): Regularization strength for sparsity
-                penalty as specified by function implementing abstract
-                method :func:`~stadion.inference.KDSMixin.regularize_sparsity`.
-            warm_start_intv (bool, optional): Whether to warm-start the
-                intervention parameters based on provided data ``x`` and
-                targets ``targets``
-            verbose (int, optional): Print log ``verbose`` number of times
-                during gradient descent.
-
-        Returns:
-            ``self``
-        """
-
         # convert x and targets into the same format
         x, targets, n_envs, self.n_vars = KDSMixin._format_input_data(x, targets)
 
@@ -296,23 +241,21 @@ class KDSMixin(SDE, ABC):
         key, subk = random.split(key)
         train_loader = make_dataloader(seed=subk[0].item(), sharding=sharding, x=x, batch_size=batch_size)
 
-        
-
-        # init KDS loss
-        if objective_fun == "kds":
-            # init kernel
+        # init kernel
+        if kernel == "rbf":
             kernel = partial(rbf_kernel, bandwidth=bandwidth)
-            loss_fun = kds_loss(self.f, self.sigma, kernel, estimator=estimator)
-        elif objective_fun == "skds_rbf_tilt":
-            # init kernel
+        elif kernel == "rbf_tilt":
             kernel = partial(rbf_kernel_tilted, bandwidth=bandwidth)
-            loss_fun = skds_loss(self.f, self.sigma, kernel, estimator=estimator)
-        elif objective_fun == "skds_rbf":
-            # init kernel
-            kernel = partial(rbf_kernel, bandwidth=bandwidth)
-            loss_fun = skds_loss(self.f, self.sigma, kernel, estimator=estimator)
-        elif objective_fun == "skds_imq":
+        elif kernel == "imq":
+            q = bandwidth
             kernel = partial(imq_kernel, q=q)
+        else:
+            raise KeyError(f"Unknown kernel function `{kernel}`")
+            
+        # init objective fun loss
+        if objective_fun == "kds":
+            loss_fun = kds_loss(self.f, self.sigma, kernel, estimator=estimator)
+        elif objective_fun == "skds":
             loss_fun = skds_loss(self.f, self.sigma, kernel, estimator=estimator)
         else:
             raise KeyError(f"Unknown objective function `{objective_fun}`")

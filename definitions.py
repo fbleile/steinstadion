@@ -15,7 +15,7 @@ SUBDIR_RESULTS = "results"
 
 # directories
 ROOT_DIR = Path(__file__).parents[0]
-PROJECT_DIR = Path(__file__).parents[1]
+PROJECT_DIR = Path(__file__).parents[0]
 
 LOCAL_STORE_DIR = Path("/cluster/path/to/anonymous/directory")
 CLUSTER_GROUP_DIR = Path("/cluster/path/to/anonymous/directory")
@@ -52,6 +52,7 @@ BASELINE_DCDI = "dcdi"
 BASELINE_IGSP = "igsp"
 BASELINE_LLC = "llc"
 BASELINE_NODAGS = "nodags"
+BASELINE_KDS = "kds"
 BASELINE_OURS = "ours"
 
 NAN_MIN = -1e4

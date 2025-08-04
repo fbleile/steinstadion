@@ -35,17 +35,19 @@ class SDE(ABC):
         self,
         x_init=None,
         is_nonnegative=False,
+        method='explicit',
         dt=0.01,
         thinning=300,
         n_samples_burnin=10,
-        rollouts_shape=(10,),
+        rollouts_shape=None,
+        rollout_restarts=10,
     ):
         # simulation parameters
         self.x_init = x_init
         self.n_varst = dt
         self.thinning = thinning
         self.n_samples_burnin = n_samples_burnin
-        self.rollouts_shape = rollouts_shape
+        self.rollouts_shape = rollouts_shape if rollouts_shape else (rollout_restarts,)
         self.is_nonnegative = is_nonnegative
 
         # attributes
@@ -331,6 +333,10 @@ class SDE(ABC):
         
     
     def get_dep_ratio(self, key, param, n_samples=1000):
+        
+        if not self.marg_indeps:
+            return None, -1
+        
         # save parameters
         self.param = param
         

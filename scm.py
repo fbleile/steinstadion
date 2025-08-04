@@ -6,10 +6,10 @@ import igraph as ig
 import numpy as onp
 from jax import numpy as jnp, random
 
-from core import Data
+from stadion.core import Data
 
 from synthetic import make_linear_model_parameters, make_interventions, make_mask
-from utils.tree import iter_tree
+from stadion.utils.tree import iter_tree
 
 from stadion.parameters import InterventionParameters
 

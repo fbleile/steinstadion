@@ -149,10 +149,10 @@ METHODS_CONFIG = [
     ("dcdi",                COLORS[0], False, "DCDI"),
     ("llc",                 COLORS[1], True, "LLC"),
     ("nodags",              COLORS[1], False, "NODAGS"),
-    # ("ours-linear_u_diag",  COLORS[2], True, r"\textbf{KDS {\small (Linear)}}"),
-    # ("ours-lnl_u_diag",     COLORS[2], False, r"\textbf{KDS {\small (MLP)}}"),
-    ("ours-linear_u_diag", COLORS[2], True, r"\textbf{KDS (Linear)}"),
-    ("ours-lnl_u_diag", COLORS[2], False, r"\textbf{KDS (MLP)}"),
+    ("kds-linear_u_diag", COLORS[2], True, r"\textbf{KDS (Linear)}"),
+    ("kds-lnl_u_diag", COLORS[2], False, r"\textbf{KDS (MLP)}"),
+    ("ours-linear_u_diag", COLORS[2], True, r"\textbf{SKDS (Linear)}"),
+    ("ours-lnl_u_diag", COLORS[2], False, r"\textbf{SKDS (MLP)}"),
     (TRUE,                  None,      True, "True"),
 ]
 

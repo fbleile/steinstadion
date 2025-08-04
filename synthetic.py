@@ -6,13 +6,13 @@ from jax import numpy as jnp, random
 import igraph as ig
 import random as pyrandom
 
-from core import sample_dynamical_system, Data
-from utils.stable import project_closest_stable_matrix
-from utils.treks import get_all_missing_treks
+from stadion.core import sample_dynamical_system, Data
+from stadion.utils.stable import project_closest_stable_matrix
+from stadion.utils.treks import get_all_missing_treks
 
 from stadion.models import LinearSDE
 from stadion.parameters import ModelParameters, InterventionParameters
-from stadion.utils import tree_init_normal
+from stadion.utils.utils import tree_init_normal
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -129,100 +129,104 @@ def make_mask(key, config):
     
     d = config["n_vars"]
     
-    max_attempts = 1000  # Adjust based on expected runtime
-    attempts = 0
+    # sample sparse mask with `edges_per_var` edges
+    key, subk = random.split(key)
+
+    if config["graph"] == "erdos_renyi":
+        mask = erdos_renyi(subk, d=d, edges_per_var=config["edges_per_var"], acyclic=False)
+
+    elif config["graph"] == "erdos_renyi_acyclic":
+        mask = erdos_renyi(subk, d=d, edges_per_var=config["edges_per_var"], acyclic=True)
+
+    elif config["graph"] == "scale_free":
+        mask = scale_free(subk, d=d, power=1.0, edges_per_var=config["edges_per_var"], acyclic=False)
+
+    elif config["graph"] == "scale_free_acyclic":
+        mask = scale_free(subk, d=d, power=1.0, edges_per_var=config["edges_per_var"], acyclic=True)
+
+    elif config["graph"] == "sparse":
+        mask = sparse(subk, d=d, sparsity=config["sparsity"], acyclic=False)
+
+    elif config["graph"] == "sparse_acyclic":
+        mask = sparse(subk, d=d, sparsity=config["sparsity"], acyclic=True)
+
+    elif config["graph"] == "sbm":
+        mask = sbm(subk, d=d, intra_edges_per_var=config["edges_per_var"], n_blocks=5, damp=0.1, acyclic=False)
+
+    elif config["graph"] == "sbm_acyclic":
+        mask = sbm(subk, d=d, intra_edges_per_var=config["edges_per_var"], n_blocks=5, damp=0.1, acyclic=True)
+
+    else:
+        raise ValueError(f"Unknown random graph structure model: {config['graph']}")
     
-    while True:
-        attempts += 1
-        if attempts > max_attempts:
-            raise RuntimeError(f"Exceeded maximum attempts while sampling sparse mask! \
-                               \nIt failed to generate {config['marg_indeps']} missing treks")
-        # sample sparse mask with `edges_per_var` edges
-        key, subk = random.split(key)
+    # max_attempts = 1000  # Adjust based on expected runtime
+    # attempts = 0
     
-        if config["graph"] == "erdos_renyi":
-            mask = erdos_renyi(subk, d=d, edges_per_var=config["edges_per_var"], acyclic=False)
-    
-        elif config["graph"] == "erdos_renyi_acyclic":
-            mask = erdos_renyi(subk, d=d, edges_per_var=config["edges_per_var"], acyclic=True)
-    
-        elif config["graph"] == "scale_free":
-            mask = scale_free(subk, d=d, power=1.0, edges_per_var=config["edges_per_var"], acyclic=False)
-    
-        elif config["graph"] == "scale_free_acyclic":
-            mask = scale_free(subk, d=d, power=1.0, edges_per_var=config["edges_per_var"], acyclic=True)
-    
-        elif config["graph"] == "sparse":
-            mask = sparse(subk, d=d, sparsity=config["sparsity"], acyclic=False)
-    
-        elif config["graph"] == "sparse_acyclic":
-            mask = sparse(subk, d=d, sparsity=config["sparsity"], acyclic=True)
-    
-        elif config["graph"] == "sbm":
-            mask = sbm(subk, d=d, intra_edges_per_var=config["edges_per_var"], n_blocks=5, damp=0.1, acyclic=False)
-    
-        elif config["graph"] == "sbm_acyclic":
-            mask = sbm(subk, d=d, intra_edges_per_var=config["edges_per_var"], n_blocks=5, damp=0.1, acyclic=True)
-    
-        else:
-            raise ValueError(f"Unknown random graph structure model: {config['graph']}")
+    # while True:
+    #     attempts += 1
+    #     if attempts > max_attempts:
+    #         raise RuntimeError(f"Exceeded maximum attempts while sampling sparse mask! \
+    #                            \nIt failed to generate {config['marg_indeps']} missing treks")
+    #       -----------------------------------
+    #        insert mask generation here
+    #       -----------------------------------
         
-        G, miss_treks = get_all_missing_treks(mask)
+    #     G, miss_treks = get_all_missing_treks(mask)
         
-        # if marg_indeps = -1 we accept every mask
-        if config["marg_indeps"] == -1:
-            print(f'missing treks: {len(miss_treks)}')
-            marg_indeps = jnp.array(miss_treks)
-            break
+    #     # if marg_indeps = -1 we accept every mask
+    #     if config.get("marg_indeps", None) in (None, -1):
+    #         print(f'missing treks: {len(miss_treks)}')
+    #         marg_indeps = jnp.array(miss_treks)
+    #         break
         
-        exp_W = jax.scipy.linalg.expm(mask)
-        A = G.to_undirected(reciprocal=False)
-        # print(f'G.edges = {list(G.edges)}')
-        # print(f'A.edges = {list(A.edges)}')
-        components = list(nx.connected_components(A))
-        # print(f'A components = {components}')
-        min_comp_len = len(min(components, key=len)) if components else None
+    #     exp_W = jax.scipy.linalg.expm(mask)
+    #     A = G.to_undirected(reciprocal=False)
+    #     # print(f'G.edges = {list(G.edges)}')
+    #     # print(f'A.edges = {list(A.edges)}')
+    #     components = list(nx.connected_components(A))
+    #     # print(f'A components = {components}')
+    #     min_comp_len = len(min(components, key=len)) if components else None
         
-        # is acyclic
-        # if not enough missing treks
-        # if to small separated components (e.g. no isolated comps)
-        if len(miss_treks) < config["marg_indeps"]:
-            continue
-        if nx.is_directed_acyclic_graph(G):
-            continue
-        if min_comp_len <= max(d / 20, 1.):
-            # print(min_comp_len)
-            continue
+    #     # is acyclic
+    #     # if not enough missing treks
+    #     # if to small separated components (e.g. no isolated comps)
+    #     if len(miss_treks) < config["marg_indeps"]:
+    #         continue
+    #     if nx.is_directed_acyclic_graph(G):
+    #         continue
+    #     if min_comp_len <= max(d / 20, 1.):
+    #         # print(min_comp_len)
+    #         continue
         
-        key, subk = random.split(key)
-        marg_indeps = random.choice(subk, 
-                          jnp.array(miss_treks),  # Convert to JAX array
-                          shape=(min(len(miss_treks),config["marg_indeps"]),), 
-                          replace=False)  # No replacement
-        break
+    #     key, subk = random.split(key)
+    #     marg_indeps = random.choice(subk, 
+    #                       jnp.array(miss_treks),  # Convert to JAX array
+    #                       shape=(min(len(miss_treks),config["marg_indeps"]),), 
+    #                       replace=False)  # No replacement
+    #     break
     
-    exp_W = jax.scipy.linalg.expm(mask)
-    trek_W = jnp.dot(exp_W.T, exp_W)
-    print(jnp.where(trek_W == 0, 0, 1))
+    # exp_W = jax.scipy.linalg.expm(mask)
+    # trek_W = jnp.dot(exp_W.T, exp_W)
+    # # print(jnp.where(trek_W == 0, 0, 1))
     
-    # Convert the adjacency matrix to a graph
-    G = nx.from_numpy_array(mask, create_using=nx.DiGraph())
+    # # Convert the adjacency matrix to a graph
+    # G = nx.from_numpy_array(mask, create_using=nx.DiGraph())
     
-    # Plot the graph
-    plt.figure(figsize=(8, 8))
+    # # Plot the graph
+    # plt.figure(figsize=(8, 8))
     
-    # Convert each row in marg_indeps to a string and join them
-    marg_indeps_text = '\n'.join([f'({row[0]}, {row[1]})' for row in marg_indeps])  # Format as pairs
+    # # Convert each row in marg_indeps to a string and join them
+    # marg_indeps_text = '\n'.join([f'({row[0]}, {row[1]})' for row in marg_indeps])  # Format as pairs
     
-    # Add the value of marg_indeps to the plot as a text label
-    plt.text(0.5, 0.95, f'marg_indeps:\n{marg_indeps_text}', fontsize=12, ha='center', va='center', transform=plt.gca().transAxes)
+    # # Add the value of marg_indeps to the plot as a text label
+    # plt.text(0.5, 0.95, f'marg_indeps:\n{marg_indeps_text}', fontsize=12, ha='center', va='center', transform=plt.gca().transAxes)
 
 
-    # nx.draw(G, with_labels=True, node_size=500, node_color='lightblue', font_size=12, font_weight='bold')
-    # plt.title("Graph Representation of Adjacency Matrix")
-    # plt.show()
+    # # nx.draw(G, with_labels=True, node_size=500, node_color='lightblue', font_size=12, font_weight='bold')
+    # # plt.title("Graph Representation of Adjacency Matrix")
+    # # plt.show()
     
-    return mask, marg_indeps
+    return mask, None #, marg_indeps
 
 
 def make_linear_model_parameters(key, config, mask):

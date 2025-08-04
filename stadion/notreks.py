@@ -7,7 +7,7 @@ import functools
 
 from stadion.crosshsic import get_studentized_cross_hsic, CROSS_HSIC_TH
 
-from stadion.utils import marg_indeps_to_indices
+from stadion.utils.utils import marg_indeps_to_indices
 
 def no_treks(W, scale = 1):
     exp_W = jax.scipy.linalg.expm(scale * W)

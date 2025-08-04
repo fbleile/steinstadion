@@ -9,7 +9,7 @@ from scipy.linalg import solve_continuous_lyapunov
 from stadion.parameters import ModelParameters, InterventionParameters
 from stadion.sde import SDE
 from stadion.inference import KDSMixin
-from stadion.utils import to_diag, tree_global_norm, tree_init_normal, \
+from stadion.utils.utils import to_diag, tree_global_norm, tree_init_normal, \
     marg_indeps_to_indices, is_hurwitz_stable, get_one_hot_index
 from stadion.notreks import notreks_loss
 from stadion.crosshsic import get_studentized_cross_hsic, CROSS_HSIC_TH
@@ -73,7 +73,7 @@ class LinearSDE(KDSMixin, SDE):
         self.marg_indeps = marg_indeps
         self.marg_indeps_adapted = self.marg_indeps
         
-        diag_idx = jnp.diag_indices(d)
+        diag_idx = jnp.diag_indices(d) #TODO only fix one by jnp.diag_indices(1)
         marg_row_idx, marg_col_idx = marg_indeps_to_indices(self.marg_indeps)
         marg_indeps_idx = jnp.stack(\
                                     [jnp.concatenate([marg_row_idx, marg_col_idx]),\
@@ -140,8 +140,20 @@ class LinearSDE(KDSMixin, SDE):
             ref = x[0].mean(-2)
             mean_shift = jnp.array([jnp.where(targets_, (x_.mean(-2) - ref), jnp.array(0.0)) for x_, targets_ in zip(x, targets)])
             intv_param["shift"] += mean_shift
-
+        
         return InterventionParameters(parameters=intv_param, targets=targets)
+    
+    def init_intv_theta(self, shape, scale=1.0):
+        # pytree of [n_envs, d, ...]
+        # learned intervention effect parameters
+        # vec_shape = (n_envs, d) if n_envs is not None else (d,)
+        # shape = {
+        #     "shift": jnp.zeros(vec_shape),
+        #     "log_scale": jnp.zeros(vec_shape),
+        # }
+        self.key, subk = random.split(self.key)
+        intv_theta = tree_init_normal(self.key, shape, scale=scale)
+        return intv_theta   
 
     """
     Model
@@ -383,11 +395,12 @@ class LinearSDE(KDSMixin, SDE):
     
     def regularize_dependence(self, x, param, intv_param):
         # ``NO TREKS,``Non-Structural``,``both``, ``None``.
-        marg_indeps = self.marg_indeps_adapted
         
         if self.dependency_regularizer == "None":
             return 0
-        elif self.dependency_regularizer == "NO TREKS":
+        
+        marg_indeps = self.marg_indeps_adapted
+        if self.dependency_regularizer == "NO TREKS":
             reg = LinearSDE.regularize_dependence_no_treks(self.notreks_loss, x, marg_indeps, param, intv_param)
         elif self.dependency_regularizer == "Lyapunov":
             reg = LinearSDE.regularize_dependence_lyapunov(marg_indeps, param, intv_param)
