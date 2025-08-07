@@ -373,7 +373,7 @@ class ExperimentManager:
         return path_plots
 
 
-    def make_summary(self, train_validation=False, wasser_eps=None, select_results=None):
+    def make_summary(self, train_validation=False, inject_hyperparams=False, wasser_eps=None, select_results=None):
         # check results have been generated
         path_data = self.make_data(check=True)
         path_results = self.launch_methods(check=True, train_validation=train_validation, select_results=select_results)
@@ -420,6 +420,8 @@ class ExperimentManager:
               
         if train_validation:
             cmd += f"--train_validation "
+        if train_validation:
+            cmd += f"--inject_hyperparams "
         if wasser_eps is not None:
             cmd += f"--wasser_eps {wasser_eps} "
         if self.only_methods is not None:
@@ -455,6 +457,8 @@ if __name__ == '__main__':
     parser.add_argument("--summary_data", action="store_true")
     parser.add_argument("--summary_train_validation", action="store_true")
     parser.add_argument("--summary", action="store_true")
+    
+    parser.add_argument("--inject_hyperparams", action="store_true")
 
     parser.add_argument("--scratch", action="store_true")
 
@@ -491,13 +495,17 @@ if __name__ == '__main__':
         _ = exp.make_data_summary()
 
     elif kwargs.summary or kwargs.summary_train_validation:
-        _ = exp.make_summary(train_validation=kwargs.summary_train_validation,
-                             wasser_eps=kwargs.wasser_eps, select_results=kwargs.select_results)
+        _ = exp.make_summary(
+                train_validation=kwargs.summary_train_validation,
+                inject_hyperparams=kwargs.inject_hyperparams,
+                wasser_eps=kwargs.wasser_eps,
+                select_results=kwargs.select_results
+            )
 
     else:
         raise ValueError("Unknown option passed")
 
-# !python manager.py scm-er --data --submit --n_datasets=50
+# !python manager.py scm-er --data --submit --n_datasets=50 9:19
 # !python manager.py scm-er --methods_train_validation --n_datasets 50 --submit --only_methods ours-lnl_u_diag ours-linear_u_diag
 # !python manager.py scm-er --summary_train_validation --n_datasets 50 --submit --only_methods ours-lnl_u_diag ours-linear_u_diag
 # !python manager.py scm-er --methods --submit --n_datasets=1 --only_methods kds-lnl_u_diag kds-linear_u_diag

@@ -9,11 +9,13 @@ warnings.filterwarnings("ignore", message=
 
 import argparse
 from pathlib import Path
+from ruamel.yaml import YAML
 
 import math
 import numpy as onp
 import copy
 from collections import OrderedDict
+import pandas as pd
 
 from pprint import pprint
 
@@ -28,7 +30,8 @@ from stadion.utils.parse import load_methods_config, get_id, load_data, load_jso
 from stadion.core import index_data
 
 from definitions import FOLDER_TRAIN, FOLDER_TEST, cpu_count, \
-    BASELINE_KDS, BASELINE_OURS, BASELINE_LLC, BASELINE_NODAGS, BASELINE_IGSP, BASELINE_DCDI, BASELINE_GIES
+    BASELINE_KDS, BASELINE_OURS, BASELINE_LLC, BASELINE_NODAGS, BASELINE_IGSP, BASELINE_DCDI, BASELINE_GIES, \
+    PROJECT_DIR, SUBDIR_EXPERIMENTS, EXPERIMENT_CONFIG_METHODS, EXPERIMENT_CONFIG_METHODS_VALIDATION
 from stadion.utils.metrics import wasserstein_fun_envs
 from stadion.utils.metrics import mse_fun_envs
 from stadion.utils.metrics import relmse_fun_envs
@@ -227,6 +230,24 @@ class MetricsComputer(object):
         
         return results, samples, param
 
+# === FUNCTION ===
+def parse_method_name(full_method_name):
+    """Parse method string into base and hyperparameters."""
+    if "__" not in full_method_name:
+        return full_method_name, {}
+
+    base, rest = full_method_name.split("__", 1)
+    hyperparams = {}
+    for pair in rest.split("-"):
+        if "=" in pair:
+            k, v = pair.split("=", 1)
+            try:
+                v = eval(v)
+            except:
+                pass
+            hyperparams[k] = v
+    return base, hyperparams
+
 
 def make_summary(summary_path, data_paths, result_paths, kwargs):
     """
@@ -381,6 +402,66 @@ def make_summary(summary_path, data_paths, result_paths, kwargs):
                                 "mse_test",
                                 "relmse_test",
                               ], skip_plot=j != (len(modes) - 1))
+        
+        # Write best hyperparams to config
+        if kwargs.train_validation and kwargs.inject_hyperparams:
+            data_config = summary_path.parent.name
+
+            methods_validation_config_path = PROJECT_DIR / SUBDIR_EXPERIMENTS / data_config / EXPERIMENT_CONFIG_METHODS_VALIDATION
+            methods_config_path = PROJECT_DIR / SUBDIR_EXPERIMENTS / data_config / EXPERIMENT_CONFIG_METHODS
+            
+            hyperparam_path = summary_path / "median" / "train_validation"
+            
+            for summary_file in sorted(hyperparam_path.glob("*.csv")):
+                df = pd.read_csv(summary_file)
+                print(df)
+                if "metric" not in df.columns or df.empty:
+                    print(f"⚠️ Skipping {summary_file.name} (missing 'metric' column or empty)")
+                    continue
+        
+                full_method_name = None
+                for value in df["metric"]:
+                    if not isinstance(value, str) or "__" not in value:
+                        continue
+                    try:
+                        base, hparams = parse_method_name(value)
+                        if base and hparams:
+                            full_method_name = value
+                            break
+                    except Exception:
+                        continue
+                try:
+                    # Parse method name and hyperparams
+                    base_method, hyperparams = parse_method_name(full_method_name)
+                    
+                    yaml = YAML()
+                    yaml.preserve_quotes = True
+                    
+                    # === Load YAML configs ===
+                    with methods_validation_config_path.open("r") as f:
+                        methods_validation_config = yaml.load(f)
+                    
+                    with methods_config_path.open("r") as f:
+                        methods_config = yaml.load(f)
+    
+                    if base_method not in methods_validation_config:
+                        raise KeyError(f"Method '{base_method}' not found in {methods_validation_config_path}")
+    
+                    # Copy and update hyperparameters
+                    method_entry = methods_validation_config[base_method].copy()
+                    method_entry.update(hyperparams)
+    
+                    # Insert or overwrite in target config
+                    methods_config[base_method] = method_entry
+    
+                    # === Save without destroying formatting ===
+                    with methods_config_path.open("w") as f:
+                        yaml.dump(methods_config, f)
+
+                    print(f"✅ Hyperparameters for '{base_method}' set in '{methods_config_path}'")
+                except Exception as e:
+                    print(f"❌ Failed to process {full_method_name} from {summary_file.name}: {e}")
+            
 
     print("Finished successfully.", flush=True)
 
@@ -396,6 +477,7 @@ if __name__ == "__main__":
     parser.add_argument("--path_plots", type=Path, required=True)
     parser.add_argument("--path_results", type=Path, required=True)
     parser.add_argument("--train_validation", action="store_true")
+    parser.add_argument("--inject_hyperparams", action="store_true")
     parser.add_argument("--only_methods", nargs="+", type=str)
     parser.add_argument("--descr")
     parser.add_argument("--max_data_plots_train", type=int, default=2) # maximum data plot

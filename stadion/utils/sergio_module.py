@@ -771,7 +771,7 @@ def simulate(key, config, verbose=False):
         if verbose:
             print(f"{ctr+1}/{len(ko_targets)}:  {ko_multiplier}")
         
-        if True == False:
+        if True == True:
             print(f'start {ctr+1}/{len(ko_targets)}: init')
     
             sim = Sergio(
@@ -882,92 +882,92 @@ if __name__ == "__main__":
     
     seed = 0
 
-    # _ = simulate(random.PRNGKey(seed), dict(
-    #     graph="erdos_renyi_acyclic", #scale_free_acyclic
-    #     edges_per_var=3,
-    #     n_vars=20,
-    #     n_unique_mr=10,
-    #     n_samples=1000,
-    #     n_intv_train=2,
-    #     n_intv_test=2,
-    #     knockdown_min=0.1,
-    #     knockdown_max=0.9,
-    #     b_min=1.0,
-    #     b_max=4.0,
-    #     k_min=3,
-    #     k_max=10,
-    #     hill=2.0,
-    #     dt=0.01,
-    #     noise_type="dpd",
-    #     noise_params=0.5,
-    #     decays=0.8,
-    #     sampling_state=50,
-    #     coop=True,
-    # ), verbose=False)
+    _ = simulate(random.PRNGKey(seed), dict(
+        graph="erdos_renyi_acyclic", #scale_free_acyclic
+        edges_per_var=3,
+        n_vars=20,
+        n_unique_mr=10,
+        n_samples=1000,
+        n_intv_train=2,
+        n_intv_test=2,
+        knockdown_min=0.1,
+        knockdown_max=0.9,
+        b_min=1.0,
+        b_max=4.0,
+        k_min=3,
+        k_max=10,
+        hill=2.0,
+        dt=0.01,
+        noise_type="dpd",
+        noise_params=0.5,
+        decays=0.8,
+        sampling_state=50,
+        coop=True,
+    ), verbose=False)
 
-    # exit()
+    exit()
     
-    import sergio_rs
-    import numpy as np
-    import pandas as pd
+    # import sergio_rs
+    # import numpy as np
+    # import pandas as pd
     
-    # === Extract config ===
-    n_vars = 20  # number_genes
-    n_bins = 10
-    n_samples=1000
-    num_cells = math.ceil(n_samples / n_bins)
-    noise_params = 0.5
-    noise_type = 'dpd'  # Not yet used in sergio-rs API
-    decays = 0.8  # List or array of length n_vars
-    sampling_state = 50  # Not used in sergio-rs yet
-    dt = 0.01
-    safety_steps = 100
-    k_coop = 2  # Hill coefficient
-    key = random.PRNGKey(seed)
-    ko_target = None
+    # # === Extract config ===
+    # n_vars = 20  # number_genes
+    # n_bins = 10
+    # n_samples=1000
+    # num_cells = math.ceil(n_samples / n_bins)
+    # noise_params = 0.5
+    # noise_type = 'dpd'  # Not yet used in sergio-rs API
+    # decays = 0.8  # List or array of length n_vars
+    # sampling_state = 50  # Not used in sergio-rs yet
+    # dt = 0.01
+    # safety_steps = 100
+    # k_coop = 2  # Hill coefficient
+    # key = random.PRNGKey(seed)
+    # ko_target = None
     
-    # === Construct GRN ===
-    grn = sergio_rs.GRN()
-    decay_value = decays[0] if isinstance(decays, (list, np.ndarray)) else decays
+    # # === Construct GRN ===
+    # grn = sergio_rs.GRN()
+    # decay_value = decays[0] if isinstance(decays, (list, np.ndarray)) else decays
     
-    # Placeholder: add full connectivity or use your own graph
-    for i in range(n_vars):
-        for j in range(n_vars):
-            if i == j:
-                continue
-            reg = sergio_rs.Gene(name=f"g{i}", decay=decay_value)
-            tar = sergio_rs.Gene(name=f"g{j}", decay=decay_value)
-            grn.add_interaction(reg=reg, tar=tar, k=1.0, h=None, n=k_coop)
+    # # Placeholder: add full connectivity or use your own graph
+    # for i in range(n_vars):
+    #     for j in range(n_vars):
+    #         if i == j:
+    #             continue
+    #         reg = sergio_rs.Gene(name=f"g{i}", decay=decay_value)
+    #         tar = sergio_rs.Gene(name=f"g{j}", decay=decay_value)
+    #         grn.add_interaction(reg=reg, tar=tar, k=1.0, h=None, n=k_coop)
     
-    grn.set_mrs()
+    # grn.set_mrs()
     
-    # === Create MR profile ===
-    mr_profile = sergio_rs.MrProfile.from_random(
-        grn,
-        num_cell_types=n_bins,
-        low_range=(0.0, 2.0),
-        high_range=(2.0, 4.0),
-        seed=seed
-    )
+    # # === Create MR profile ===
+    # mr_profile = sergio_rs.MrProfile.from_random(
+    #     grn,
+    #     num_cell_types=n_bins,
+    #     low_range=(0.0, 2.0),
+    #     high_range=(2.0, 4.0),
+    #     seed=seed
+    # )
     
-    # === Apply knockout if given ===
-    # if ko_target is not None:
-    #     grn.knockout([f"g{i}" for i in ko_target], ko_multiplier)
+    # # === Apply knockout if given ===
+    # # if ko_target is not None:
+    # #     grn.knockout([f"g{i}" for i in ko_target], ko_multiplier)
     
-    # === Setup simulator ===
-    sim = sergio_rs.Sim(
-        grn=grn,
-        num_cells=num_cells,
-        noise_s=noise_params[0],  # Multiplicative noise only in current version
-        safety_iter=safety_steps,
-        scale_iter=10,
-        dt=dt,
-        seed=key
-    )
+    # # === Setup simulator ===
+    # sim = sergio_rs.Sim(
+    #     grn=grn,
+    #     num_cells=num_cells,
+    #     noise_s=noise_params[0],  # Multiplicative noise only in current version
+    #     safety_iter=safety_steps,
+    #     scale_iter=10,
+    #     dt=dt,
+    #     seed=key
+    # )
     
-    # === Simulate ===
-    data = sim.simulate(mr_profile)
+    # # === Simulate ===
+    # data = sim.simulate(mr_profile)
     
-    # === Convert to 2D NumPy array ===
-    data_np = data.drop("Genes").to_numpy()
+    # # === Convert to 2D NumPy array ===
+    # data_np = data.drop("Genes").to_numpy()
 

@@ -1,5 +1,3 @@
----
-
 gies:
   n_samples: 1000
   __run__:
@@ -8,13 +6,12 @@ gies:
     hours: 0
     mins: 20
 
-
 igsp:
   n_samples: 1000
   alpha: 0.003
   ci_test: gaussian
   rank_fail_add: 0.0001
-  rank_check_tol: 0.000001
+  rank_check_tol: 1.0e-06
   __run__:
     n_cpus: 1
     n_gpus: 0
@@ -37,6 +34,7 @@ dcdi:
     mem: 4000
     hours: 23
     mins: 59
+
 
 llc:
   reg_coeff: 0.1
@@ -66,6 +64,101 @@ kds-linear_u_diag:
   bandwidth: 3.0
   reg_strength: 0.003
 
+  batch_size: 512
+  batch_size_env: 1
+  steps: 20000
+  optimizer: adam
+  learning_rate: 0.001
+  init_scale: 0.001
+  init_diag: 0.0
+  init_intv_at_mean: true
+  grad_clip_val:
+  reg_type: glasso
+  learn_intv_scale: false
+  auto_diff: true
+  sampler_eps: 0.0
+  reg_eps: 0.0
+  force_linear_diag: true
+
+  sde:
+    method: explicit
+    rollout_restarts: 10
+    n_samples_burnin: 100
+    thinning: 500
+    dt: 0.01
+
+  log_every: 200
+  log_long_every: 100000000
+
+  __run__:
+    n_cpus: 3
+    n_gpus: 1
+    mem: 4000
+    hours: 1
+    mins: 59
+    gpu_model: rtx_2080_ti
+
+
+kds-lnl_u_diag:
+
+  model: lnl_u_diag
+
+  mlp_hidden: 8
+  mlp_activation: sigmoid
+  mlp_init: uniform
+
+  bandwidth: 3.0
+  reg_strength: 0.003
+
+  batch_size: 512
+  batch_size_env: 1
+  steps: 20000
+  optimizer: adam
+  learning_rate: 0.001
+  init_scale: 0.001
+  init_diag: 0.0
+  init_intv_at_mean: true
+  grad_clip_val:
+  reg_type: glasso
+  learn_intv_scale: false
+  auto_diff: true
+  sampler_eps: 0.0
+  reg_eps: 0.0
+  force_linear_diag: true
+
+  sde:
+    method: explicit
+    rollout_restarts: 10
+    n_samples_burnin: 100
+    thinning: 500
+    dt: 0.01
+
+  log_every: 200
+  log_long_every: 100000000
+
+  __run__:
+    n_cpus: 2
+    n_gpus: 1
+    mem: 4000
+    hours: 2
+    mins: 59
+    gpu_model: rtx_2080_ti
+
+
+ours-linear_u_diag:
+
+  model: linear_u_diag
+
+  # objective
+  objective_fun: skds
+  estimator: linear
+
+  # kernel
+  kernel: rbf_tilt
+
+  bandwidth: 7.0      # [ 0.5, 1., 3., 5., 7., ]
+  reg_strength: 0.1   # [ 0.001, 0.01, 0.1 ]
+
   # optimization
   batch_size: 512
   batch_size_env: 1
@@ -75,7 +168,7 @@ kds-linear_u_diag:
   init_scale: 0.001
   init_diag: 0.0
   init_intv_at_mean: true
-  grad_clip_val: null
+  grad_clip_val:
   reg_type: glasso
   learn_intv_scale: false
   auto_diff: true
@@ -102,16 +195,22 @@ kds-linear_u_diag:
     mins: 59
     gpu_model: rtx_2080_ti
 
-
-kds-lnl_u_diag:
+ours-lnl_u_diag:
 
   model: lnl_u_diag
   mlp_hidden: 8
   mlp_activation: sigmoid
   mlp_init: uniform
 
-  bandwidth: 3.0
-  reg_strength: 0.003
+  # objective
+  objective_fun: skds
+  estimator: linear
+
+  # kernel
+  kernel: rbf_tilt
+
+  bandwidth: 5.0
+  reg_strength: 0.01
 
   # optimization
   batch_size: 512
@@ -122,7 +221,7 @@ kds-lnl_u_diag:
   init_scale: 0.001
   init_diag: 0.0
   init_intv_at_mean: true
-  grad_clip_val: null
+  grad_clip_val:
   reg_type: glasso
   learn_intv_scale: false
   auto_diff: true
