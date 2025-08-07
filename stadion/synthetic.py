@@ -441,7 +441,10 @@ def synthetic_sde_data(key, config):
                 intv=intv_msks,
                 intv_param=intv_params,
                 marg_indeps=marg_indeps,
-                true_param= model.param._store, # jnp.tile(true_theta["w1"], (intv_msks.shape[0], 1, 1)),
+                true_param=jnp.tile(true_theta["w1"], (intv_msks.shape[0], 1, 1)),
+                # true_param=dict(
+                #     base_params=model.param._store,
+                #     intv_params=intv_params),
                 traj=traj,
             ).copy(),
             log,

@@ -173,28 +173,43 @@ if __name__ == "__main__":
         # infer most likely parameters for train interventions via search
         key, subk = random.split(random.PRNGKey(kwargs.seed))
         intv_theta_train_init = dict(shift=jnp.zeros(train_intv.shape))
+        intv_param_train_init = InterventionParameters(parameters=intv_theta_train_init, targets=train_intv)
         intv_theta_train, search_logs_train = search_intv_theta_shift(subk, theta=None,
-                                                                            intv_theta=intv_theta_train_init,
+                                                                            intv_param=intv_param_train_init,
                                                                             target_means=train_means,
                                                                             target_intv=train_intv,
                                                                             sampler=sampler_llc,
-                                                                            n_samples=kwargs.n_samples)
+                                                                            n_samples=kwargs.n_samples,
+                                                                            jit_sampler=False)
 
         key, subk = random.split(key)
-        pred_samples_train = sampler_llc(subk, None, intv_theta_train, train_targets.intv, n_samples=kwargs.n_samples)
-
+        pred_samples_train = sampler_llc(
+            subk,
+            kwargs.n_samples,
+            intv_param=InterventionParameters(
+                parameters=intv_theta_train,
+                targets=train_intv,),
+            )
+        
         # sample test predictions
         intv_theta_test_init = dict(shift=jnp.zeros(test_intv.shape))
+        intv_param_test_init = InterventionParameters(parameters=intv_theta_test_init, targets=test_intv)
         intv_theta_test, search_logs_test = search_intv_theta_shift(subk, theta=None,
-                                                                          intv_theta=intv_theta_test_init,
+                                                                          intv_param=intv_param_test_init,
                                                                           target_means=test_means,
                                                                           target_intv=test_intv,
                                                                           sampler=sampler_llc,
-                                                                          n_samples=kwargs.n_samples)
+                                                                          n_samples=kwargs.n_samples,
+                                                                          jit_sampler=False)
 
         key, subk = random.split(key)
-        pred_samples_test = sampler_llc(subk, None, intv_theta_test, test_intv, n_samples=kwargs.n_samples)
-
+        pred_samples_test = sampler_llc(
+            subk,
+            kwargs.n_samples,
+            intv_param=InterventionParameters(
+                parameters=intv_theta_test,
+                targets=test_intv,),
+            )
 
         # store in dictionary with results
         pred["samples_train"] = pred_samples_train
@@ -214,8 +229,10 @@ if __name__ == "__main__":
         # infer most likely parameters for train interventions via search
         key, subk = random.split(random.PRNGKey(kwargs.seed))
         intv_theta_train_init = dict(shift=jnp.zeros(train_intv.shape))
+        intv_param_train_init = InterventionParameters(parameters=intv_theta_train_init, targets=train_intv)
+        
         intv_theta_train, search_logs_train = search_intv_theta_shift(subk, theta=None,
-                                                                      intv_theta=intv_theta_train_init,
+                                                                      intv_param=intv_param_train_init,
                                                                       target_means=train_means,
                                                                       target_intv=train_intv,
                                                                       sampler=sampler_nodags,
@@ -223,12 +240,19 @@ if __name__ == "__main__":
                                                                       jit_sampler=False)
 
         key, subk = random.split(key)
-        pred_samples_train = sampler_nodags(subk, None, intv_theta_train, train_targets.intv, n_samples=kwargs.n_samples)
+        pred_samples_train = sampler_nodags(
+            subk,
+            kwargs.n_samples,
+            intv_param=InterventionParameters(
+                parameters=intv_theta_train,
+                targets=train_intv,),
+            )
 
         # sample test predictions
         intv_theta_test_init = dict(shift=jnp.zeros(test_intv.shape))
+        intv_param_test_init = InterventionParameters(parameters=intv_theta_test_init, targets=test_intv)
         intv_theta_test, search_logs_test = search_intv_theta_shift(subk, theta=None,
-                                                                    intv_theta=intv_theta_test_init,
+                                                                    intv_param=intv_param_test_init,
                                                                     target_means=test_means,
                                                                     target_intv=test_intv,
                                                                     sampler=sampler_nodags,
@@ -236,7 +260,13 @@ if __name__ == "__main__":
                                                                     jit_sampler=False)
 
         key, subk = random.split(key)
-        pred_samples_test = sampler_nodags(subk, None, intv_theta_test, test_intv, n_samples=kwargs.n_samples)
+        pred_samples_test = sampler_nodags(
+            subk,
+            kwargs.n_samples,
+            intv_param=InterventionParameters(
+                parameters=intv_theta_test,
+                targets=test_intv,),
+            )
 
         # store in dictionary with results
         pred["samples_train"] = pred_samples_train
@@ -258,11 +288,11 @@ if __name__ == "__main__":
 
         # infer most likely parameters for test interventions via search
         key, subk = random.split(random.PRNGKey(kwargs.seed))
-        intv_theta_test_init = intv_theta_initializer(n_envs=test_intv.shape[0])
+        intv_param_test_init = intv_theta_initializer(n_envs=test_intv.shape[0])
         # infer most likely parameters for test interventions via search
         key, subk = random.split(key)
         intv_theta_test, search_logs = search_intv_theta_shift(subk, theta=theta,
-                                                               intv_param=intv_theta_test_init,
+                                                               intv_param=intv_param_test_init,
                                                                target_means=test_means,
                                                                target_intv=test_intv,
                                                                sampler=sampler,

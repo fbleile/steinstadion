@@ -111,10 +111,12 @@ def run_llc(seed, train_targets, config):
     g = 1 - np.isclose(weights, 0).astype(np.int32)
 
     # make sampler from fitted parameters
-    def sampler(key, _, intv_theta, intv, n_samples):
+    def sampler(key, n_samples, *, intv_param=None): # key, _, intv_theta, intv, n_samples):
         # shift intervention
         # [n_envs, N, d]
+        intv = intv_param.targets
         n_envs, d = intv.shape
+        intv_theta = intv_param._store
         shift = intv_theta["shift"] * intv
         eps = random.normal(key, shape=(n_envs, n_samples, d)) * noise_scale_est
         eps_shifted = eps + shift[:, None, :]

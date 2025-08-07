@@ -27,7 +27,7 @@ from sklearn.decomposition import PCA
 from pandas.plotting import autocorrelation_plot
 
 from definitions import IS_CLUSTER
-from stadion.experiment.plot_config import *
+from experiment.plot_config import *
 from stadion.utils.plot_data import scatter_matrix
 
 

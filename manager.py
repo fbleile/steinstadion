@@ -183,7 +183,7 @@ class ExperimentManager:
 
         # launch runs that generate data
         experiment_name = kwargs.experiment.replace("/", "--")
-        cmd = f"python '{PROJECT_DIR}/stadion/experiment/data.py' " \
+        cmd = f"python '{PROJECT_DIR}/experiment/data.py' " \
               r"--seed \$SLURM_ARRAY_TASK_ID " \
               f"--data_config_path '{data_config_path}' " \
               f"--path_data '{path_data}' "
@@ -286,7 +286,7 @@ class ExperimentManager:
             if seed_indices == list(range(seed_indices[0], seed_indices[-1] + 1)):
                 seed_indices = range(seed_indices[0], seed_indices[-1] + 1)
 
-            cmd = f"python '{PROJECT_DIR}/stadion/experiment/methods.py' " \
+            cmd = f"python '{PROJECT_DIR}/experiment/methods.py' " \
                   f"--method {method} " \
                   r"--seed \$SLURM_ARRAY_TASK_ID " \
                   r"--data_id \$SLURM_ARRAY_TASK_ID " \
@@ -353,7 +353,7 @@ class ExperimentManager:
 
         # create summary
         experiment_name = kwargs.experiment.replace("/", "--")
-        cmd = f"python '{PROJECT_DIR}/stadion/experiment/data_summary.py' " \
+        cmd = f"python '{PROJECT_DIR}/experiment/data_summary.py' " \
               f"--path_data {path_data} " \
               f"--path_plots '{path_plots}' " \
               f"--descr '{experiment_name}-{path_plots.parts[-1]}' "
@@ -411,7 +411,7 @@ class ExperimentManager:
 
         # create summary
         experiment_name = kwargs.experiment.replace("/", "--")
-        cmd = f"python '{PROJECT_DIR}/stadion/experiment/summary.py' " \
+        cmd = f"python '{PROJECT_DIR}/experiment/summary.py' " \
               f"--methods_config_path {methods_config_path} " \
               f"--path_data {path_data} " \
               f"--path_plots '{path_plots}' " \
@@ -497,8 +497,11 @@ if __name__ == '__main__':
     else:
         raise ValueError("Unknown option passed")
 
-# !python manager.py scm-er --data --submit --n_datasets=1
-# !python manager.py scm-er --methods_train_validation --n_datasets 1 --submit --only_methods ours-lnl_u_diag
-# !python manager.py scm-er --summary_train_validation --n_datasets 1 --submit
+# !python manager.py scm-er --data --submit --n_datasets=50
+# !python manager.py scm-er --methods_train_validation --n_datasets 50 --submit --only_methods ours-lnl_u_diag ours-linear_u_diag
+# !python manager.py scm-er --summary_train_validation --n_datasets 50 --submit --only_methods ours-lnl_u_diag ours-linear_u_diag
 # !python manager.py scm-er --methods --submit --n_datasets=1 --only_methods kds-lnl_u_diag kds-linear_u_diag
 # !python manager.py scm-er --summary --submit --n_datasets=1 --only_methods kds-lnl_u_diag kds-linear_u_diag
+
+# problems with gies, llc, nodags,
+# seems to be the changed search_theta_test_intv thing

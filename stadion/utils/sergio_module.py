@@ -1,7 +1,8 @@
 import sys
 import numpy as np
+import jax
 import jax.numpy as jnp
-from jax import random
+from jax import random, lax
 import math
 import copy
 from collections import defaultdict
@@ -9,6 +10,9 @@ import itertools
 
 from stadion.core import Data
 from stadion.synthetic import erdos_renyi, scale_free, sbm
+
+import sergio_rs
+from joblib import Parallel, delayed
 
 
 class Gene(object):
@@ -51,7 +55,7 @@ class Gene(object):
 class Sergio:
 
     def __init__(self,
-                 rng,
+                 key,
                  number_genes,
                  number_bins,
                  number_sc,
@@ -81,7 +85,10 @@ class Sergio:
         production and decay processes, 'dpd': two independent intrinsic noises are associated to production and decay processes
         """
 
-        self.rng = rng
+        self.key = key
+        assert isinstance(key, jax.Array) and key.shape == (2,) and key.dtype == jnp.uint32, \
+    f"Expected key to be a JAX PkeyKey (e.g., random.PkeyKey(seed)). Got: {key}"
+
 
         self.nGenes_ = number_genes
         self.nBins_ = number_bins
@@ -261,7 +268,9 @@ class Sergio:
         """
 
         # time indices when to collect "single-cell" expression snapshots
-        self.scIndices_ = self.rng.integers(low = - self.sampling_state_ * self.nSC_, high = 0, size = self.nSC_)
+        self.key, subkey = random.split(self.key)
+        self.scIndices_ = random.randint(subkey, shape=(self.nSC_,), minval=-self.sampling_state_ * self.nSC_, maxval=0)
+
 
     def calculate_required_steps_(self, level):
         """
@@ -435,6 +444,113 @@ class Sergio:
 
             return prod_rate
 
+    def parallel_CLE_simulator_(self, level):
+        self.calculate_half_response_(level)
+        self.init_gene_bin_conc_(level)
+        nReqSteps = self.calculate_required_steps_(level)
+    
+        sim_set = np.copy(self.level2verts_[level]).tolist()
+    
+        while sim_set != []:
+            delIndicesGenes = []
+    
+            n_genes = len(sim_set)
+            noise_type = self.noiseType_
+            keys_per_gene = {
+                "sp": 1,
+                "spd": 1,
+                "dpd": 2
+            }.get(noise_type)
+    
+            if keys_per_gene is None:
+                raise KeyError(f"Unknown noise type {noise_type}")
+    
+            total_keys_needed = n_genes * keys_per_gene
+            all_keys = random.split(self.key, total_keys_needed + 1)
+            self.key = all_keys[-1]
+            subkeys = all_keys[:-1]  # shape: (total_keys_needed, 2)
+    
+            def simulate_gene(gi, bin_list, key_slice):
+                gID = bin_list[0].ID
+                gLevel, gIDX = self.gID_to_level_and_idx[gID]
+                assert level == gLevel
+                assert gi == gIDX
+    
+                currExp = np.array([gb.Conc[-1] for gb in bin_list])
+    
+                if self.knockout_target[gID]:
+                    prod_rate = self.knockout_multiplier[gID] * self.calculate_prod_rate_(bin_list, level)
+                else:
+                    assert self.knockout_multiplier[gID] == 1.0
+                    prod_rate = self.calculate_prod_rate_(bin_list, level)
+    
+                decay = np.multiply(self.decayVector_[gID], currExp)
+                noiseParam = self.noiseParamsVector_[gID]
+    
+                if noise_type == "sp":
+                    dw = random.normal(key_slice[0], shape=(len(currExp),))
+                    amplitude = np.multiply(noiseParam, np.sqrt(prod_rate))
+                    noise = np.multiply(amplitude, dw)
+    
+                elif noise_type == "spd":
+                    dw = random.normal(key_slice[0], shape=(len(currExp),))
+                    amplitude = np.multiply(noiseParam, np.sqrt(prod_rate) + np.sqrt(decay))
+                    noise = np.multiply(amplitude, dw)
+    
+                elif noise_type == "dpd":
+                    dw_p = random.normal(key_slice[0], shape=(len(currExp),))
+                    dw_d = random.normal(key_slice[1], shape=(len(currExp),))
+                    amplitude_p = np.multiply(noiseParam, np.sqrt(prod_rate))
+                    amplitude_d = np.multiply(noiseParam, np.sqrt(decay))
+                    noise = np.multiply(amplitude_p, dw_p) + np.multiply(amplitude_d, dw_d)
+    
+                dxdt = self.dt_ * (prod_rate - decay) + np.sqrt(self.dt_) * noise
+    
+                updated_bin_list = []
+                results = []
+                del_indices = []
+    
+                for bIDX, gObj in enumerate(bin_list):
+                    new_val = gObj.Conc[-1] + dxdt[bIDX]
+                    gObj.append_Conc(new_val)
+                    gObj.incrementStep()
+    
+                    if len(gObj.Conc) == nReqSteps:
+                        gObj.set_scExpression(self.scIndices_)
+                        mean_expr = np.mean(gObj.scExpression)
+                        results.append((gID, gIDX, bIDX, mean_expr, gObj))
+                        del_indices.append(bIDX)
+    
+                    updated_bin_list.append(gObj)
+    
+                return gi, updated_bin_list, del_indices, results
+    
+            # Run parallel loop
+            parallel_results = Parallel(n_jobs=-1)(
+                delayed(simulate_gene)(
+                    gi,
+                    bin_list,
+                    subkeys[gi * keys_per_gene:(gi + 1) * keys_per_gene]
+                )
+                for gi, bin_list in enumerate(sim_set)
+            )
+    
+            sim_set_new = []
+            updates = []
+    
+            for gi, updated_bin_list, del_indices, results in parallel_results:
+                new_bin_list = [b for j, b in enumerate(updated_bin_list) if j not in del_indices]
+                sim_set_new.append(new_bin_list)
+                if not new_bin_list:
+                    delIndicesGenes.append(gi)
+                updates.extend(results)
+    
+            # Apply collected updates
+            for gID, gIDX, binID, mean_expr, gObj in updates:
+                self.meanExpression[gID, binID] = mean_expr
+                self.level2verts_[level][gIDX][binID] = gObj
+    
+            sim_set = [i for j, i in enumerate(sim_set_new) if j not in delIndicesGenes]
 
     def CLE_simulator_(self, level):
 
@@ -486,21 +602,25 @@ class Sergio:
                     # This notation is inconsistent with our formulation, dw should
                     # include dt^0.5 as well, but here we multipy dt^0.5 later
                     # [nBins, ]
-                    dw = self.rng.normal(size = len(currExp))
+                    self.key, subkey = random.split(self.key)
+                    dw = random.normal(subkey, shape=(len(currExp),))
                     amplitude = np.multiply (self.noiseParamsVector_[gID] , np.power(prod_rate, 0.5))
                     noise = np.multiply(amplitude, dw)
 
                 elif self.noiseType_ == "spd":
                     # [nBins, ]
-                    dw = self.rng.normal(size = len(currExp))
+                    self.key, subkey = random.split(self.key)
+                    dw = random.normal(subkey, shape=(len(currExp),))
                     amplitude = np.multiply (self.noiseParamsVector_[gID] , np.power(prod_rate, 0.5) + np.power(decay, 0.5))
                     noise = np.multiply(amplitude, dw)
 
 
                 elif self.noiseType_ == "dpd":
                     # [nBins, ]
-                    dw_p = self.rng.normal(size = len(currExp))
-                    dw_d = self.rng.normal(size = len(currExp))
+                    self.key, subkey = random.split(self.key)
+                    dw_p = random.normal(subkey, shape=(len(currExp),))
+                    self.key, subkey = random.split(self.key)
+                    dw_d = random.normal(subkey, shape=(len(currExp),))
 
                     amplitude_p = np.multiply (self.noiseParamsVector_[gID] , np.power(prod_rate, 0.5))
                     amplitude_d = np.multiply (self.noiseParamsVector_[gID] , np.power(decay, 0.5))
@@ -558,192 +678,296 @@ class Sergio:
         return ret
 
 
-def simulate(seed, config, verbose=False):
-
-    # verbose = True
+def simulate(key, config, verbose=False):
+    # sample ground truth parameters
+    key, subk = random.split(key)
     n_vars = config["n_vars"]
-    rng = np.random.default_rng(seed)
     number_sc = math.ceil(config["n_samples"] / config["n_unique_mr"])
 
     # sample acyclic graph with `edges_per_var` edges
     if config["graph"] == "erdos_renyi_acyclic":
-        g = np.array(erdos_renyi(random.PRNGKey(seed), d=n_vars, edges_per_var=config["edges_per_var"], acyclic=True))
+        key, subk = random.split(key)
+        g = jnp.array(erdos_renyi(subk, d=n_vars, edges_per_var=config["edges_per_var"], acyclic=True))
 
     elif config["graph"] == "scale_free_acyclic":
-        g = np.array(scale_free(random.PRNGKey(seed), d=n_vars, power=1.0, edges_per_var=config["edges_per_var"], acyclic=True))
+        key, subk = random.split(key)
+        g = jnp.array(scale_free(subk, d=n_vars, power=1.0, edges_per_var=config["edges_per_var"], acyclic=True))
 
     elif config["graph"] == "sbm_acyclic":
-        g = np.array(sbm(random.PRNGKey(seed), d=n_vars, intra_edges_per_var=config["edges_per_var"], n_blocks=5, damp=0.1, acyclic=True))
+        key, subk = random.split(key)
+        g = jnp.array(sbm(subk, d=n_vars, intra_edges_per_var=config["edges_per_var"], n_blocks=5, damp=0.1, acyclic=True))
 
     else:
         raise ValueError(f"Unknown random graph structure model: {config['graph']}")
+        
+    print(f'graph:. {g}')
+    # Convert to list of edges and weights
+    edges = []
+    weights = []
+    
+    for regulator in range(g.shape[0]):
+        for target in range(g.shape[1]):
+            if g[regulator, target] != 0:
+                edges.append((regulator, target))
+                weights.append(float(g[regulator, target]))  # if weights are binary (0/1), else insert actual weights
+    
+    # Add to config
+    config["edges"] = edges
+    config["weights"] = weights
 
     # sample interaction terms K
-    k = np.abs(rng.uniform(config["k_min"], config["k_max"], size=(n_vars, n_vars)))
-    effect_sgn = rng.binomial(1, 0.5, size=(n_vars, n_vars)) * 2.0 - 1.0
-
-    k = k * effect_sgn.astype(np.float32)
-    assert np.array_equal(k != 0, effect_sgn != 0)
-    assert set(np.unique(effect_sgn)).issubset({-1.0, 0.0, 1.0})
-
-    # mask by graph (not needed, but for visualization purposes)
+    key, subk1, subk2 = random.split(key, 3)
+    k = jnp.abs(random.uniform(subk1, shape=(n_vars, n_vars), minval=config["k_min"], maxval=config["k_max"]))
+    effect_sgn = random.bernoulli(subk2, 0.5, shape=(n_vars, n_vars)) * 2.0 - 1.0
+    k = k * effect_sgn.astype(jnp.float32)
     k *= g
 
     # master regulator basal reproduction rate
-    basal_rates = rng.uniform(config["b_min"], config["b_max"], size=(n_vars, config["n_unique_mr"]))
+    key, subk = random.split(key)
+    basal_rates = random.uniform(subk, shape=(n_vars, config["n_unique_mr"]),
+                                  minval=config["b_min"], maxval=config["b_max"])
 
-    # hill coeff
-    hills = config["hill"] * np.ones((n_vars, n_vars))
+    hills = config["hill"] * jnp.ones((n_vars, n_vars))
 
     if verbose:
         np.set_printoptions(precision=3, suppress=True)
-        print(g)
-        print(k * g)
+        print(np.array(g))
+        print(np.array(k * g))
 
     # sample cooperative interaction terms K
     if "coop" in config and config["coop"]:
-        k_coop = np.abs(rng.uniform(config["k_min"], config["k_max"], size=(n_vars, n_vars, n_vars)))
-        effect_sgn_coop = rng.binomial(1, 0.5, size=(n_vars, n_vars, n_vars)) * 2.0 - 1.0
-        k_coop = k_coop * effect_sgn_coop.astype(np.float32)
+        key, subk1, subk2 = random.split(key, 3)
+        k_coop = jnp.abs(random.uniform(subk1, shape=(n_vars, n_vars, n_vars),
+                                        minval=config["k_min"], maxval=config["k_max"]))
+        effect_sgn_coop = random.bernoulli(subk2, 0.5, shape=(n_vars, n_vars, n_vars)) * 2.0 - 1.0
+        k_coop = k_coop * effect_sgn_coop.astype(jnp.float32)
     else:
         k_coop = None
 
-    """Sample targets for experiments performed (wild-type, knockout) """
-
-    # stack a few permutations to ensure that we prioritize unseen perturbations initially, when sampling interventions
-    interv_nodes_ordering = np.concatenate([rng.permutation(config["n_vars"]) for _ in range(3)])
+    # Sample targets for experiments (wild-type, knockout)
+    key, *subkeys = random.split(key, 4)
+    interv_nodes_ordering = jnp.concatenate([random.permutation(subkeys[i], jnp.arange(config["n_vars"])) for i in range(3)])
+    interv_nodes_ordering = np.array(interv_nodes_ordering)
 
     ko_targets = [(True, np.zeros(n_vars).astype(bool), np.ones(n_vars))]
-
     n_intervened = 0
-    for is_train, n_interv in [(True,  config["n_intv_train"]),
-                               (False, config["n_intv_test"])]:
 
-        for j in interv_nodes_ordering[n_intervened:n_intervened + n_interv]:
-            # select intervened node
+    for is_train, n_intv in [(True, config["n_intv_train"]), (False, config["n_intv_test"])]:
+        for j in interv_nodes_ordering[n_intervened:n_intervened + n_intv]:
             targets = np.eye(n_vars)[j].astype(bool)
-
-            # sample strength of knockdown
-            knockdown_scalars = rng.uniform(config["knockdown_min"], config["knockdown_max"], size=(n_vars,))
-            knockdown_scalars = np.where(targets, knockdown_scalars, 1)
-
+            key, subk = random.split(key)
+            knockdown_scalars = random.uniform(subk, shape=(n_vars,),
+                                               minval=config["knockdown_min"],
+                                               maxval=config["knockdown_max"])
+            knockdown_scalars = np.where(targets, knockdown_scalars, 1.0)
             ko_targets.append((is_train, targets, knockdown_scalars))
 
-        n_intervened += n_interv
+        n_intervened += n_intv
 
-    # simulate for wild type and each ko target
-    is_trains = []
-    data = []
-    intv = []
-    intv_strength = []
-
+    is_trains, data, intv, intv_strength = [], [], [], []
     reference_meanExpression = None
 
     for ctr, (is_train, ko_target, ko_multiplier) in enumerate(ko_targets):
-
         if verbose:
             print(f"{ctr+1}/{len(ko_targets)}:  {ko_multiplier}")
-
-        # setup simulator
-        sim = Sergio(
-            rng=rng,
-            number_genes=n_vars,
-            number_bins=config["n_unique_mr"],
-            number_sc=number_sc,
-            noise_params=config["noise_params"],
-            noise_type=config["noise_type"],
-            decays=config["decays"],
-            sampling_state=config["sampling_state"],
-            knockout_target=ko_target,
-            knockout_multiplier=ko_multiplier,
-            reference_meanExpression=reference_meanExpression,
-            dt=config["dt"],
-            safety_steps=100,
-            k_coop=k_coop,
-        )
-
-        sim.custom_graph(
-            g=g,
-            k=k,
-            b=basal_rates,
-            hill=hills,
-        )
-
-        # run steady-state simulations
-        assert number_sc >= 1, f"Need to have number_sc >= 1: number_sc {number_sc}, n_samples: {config['n_samples']}"
-        sim.simulate()
-
-        # Get the clean simulated expression matrix after steady_state simulations
-        # shape: [number_bins (#cell types), number_genes, number_sc (#cells per type)]
-        expr = sim.getExpressions()
-
-        # Aggregate by concatenating gene expressions of all cell types into 2d array
-        # [number_genes (#genes), number_bins * number_sc (#cells  = #n_unique_mr * #cells_per_type)]
-        expr_agg = np.concatenate(expr, axis=1)
-
-        # Now each row represents a gene and each column represents a simulated single-cell
-        # Gene IDs match their row in this expression matrix
-        # [number_bins * number_sc, number_genes]
-        x = expr_agg.T
-        x = rng.permutation(x, axis=0)
-
-        # store reference gene expressions for half response fixing in interventional settings
-        if reference_meanExpression is None:
-            assert np.allclose(ko_target, 0), "reference_meanExpression should be set during observational phase"
-            reference_meanExpression = copy.deepcopy(sim.meanExpression)
+        
+        if True == False:
+            print(f'start {ctr+1}/{len(ko_targets)}: init')
+    
+            sim = Sergio(
+                key=key,
+                number_genes=n_vars,
+                number_bins=config["n_unique_mr"],
+                number_sc=number_sc,
+                noise_params=config["noise_params"],
+                noise_type=config["noise_type"],
+                decays=config["decays"],
+                sampling_state=config["sampling_state"],
+                knockout_target=ko_target,
+                knockout_multiplier=ko_multiplier,
+                reference_meanExpression=reference_meanExpression,
+                dt=config["dt"],
+                safety_steps=100,
+                k_coop=k_coop,
+            )
+            
+            print(f'start {ctr+1}/{len(ko_targets)}: custom_graph')
+            sim.custom_graph(g=g, k=k, b=basal_rates, hill=hills)
+            print(f'start {ctr+1}/{len(ko_targets)}: simulate')
+            sim.simulate()
+            print(f'start {ctr+1}/{len(ko_targets)}: rest')
+            expr = sim.getExpressions()
+        
+            expr_agg = jnp.concatenate(expr, axis=1)
+            x = expr_agg.T
+            key, subk = random.split(key)
+            x = random.permutation(subk, x, axis=0)
+    
+            if reference_meanExpression is None:
+                reference_meanExpression = copy.deepcopy(sim.meanExpression)
         else:
-            assert not np.allclose(ko_target, 0), "reference_meanExpression should have been set before doing interventions"
+            # === BEGIN sergio-rs drop-in replacement ===
+            # Build GRN
+            grn = sergio_rs.GRN()
 
-        # advance rng outside for faithfullness/freshness of data in for loop
-        rng = copy.deepcopy(sim.rng)
+            for (reg_idx, tar_idx), weight in zip(config["edges"], config["weights"]):
+                reg = sergio_rs.Gene(name=f"g{reg_idx}", decay=config["decays"])
+                tar = sergio_rs.Gene(name=f"g{tar_idx}", decay=config["decays"])
+                grn.add_interaction(reg=reg, tar=tar, k=weight, h=None, n=2)
+            
+            grn.set_mrs()  # 🔥 required before creating MR profile
+            
+            # 4. Create MR profile from sampled `basal_rates`
+            mr_profile = sergio_rs.MrProfile.from_random(
+                grn,
+                num_cell_types=config["n_unique_mr"],
+                low_range=(config["b_min"], config["b_min"]+1),  # if these match your basal_rates min/max
+                high_range=(config["b_max"], config["b_max"] + 1),  # tweak ranges as desired
+                seed=int(key[0])  # your random seed
+            )
+
+            
+            # 5. Apply knockout if any target active
+            if ko_target.any():
+                knocked_genes = [f"g{i}" for i, active in enumerate(ko_target) if active]
+                strengths = ko_multiplier[ko_target]
+                grn.knockout_dict(dict(zip(knocked_genes, strengths)))
+            
+            # 6. Simulate
+            sim = sergio_rs.Sim(
+                grn=grn,
+                num_cells=number_sc,
+                noise_s=config["noise_params"],
+                safety_iter=100,
+                scale_iter=10,
+                dt=config["dt"],
+                seed=int(key[0]) if hasattr(key, '__getitem__') else int(key),
+            )
+            data_ = sim.simulate(mr_profile)
+            data_np = data_.drop("Genes").to_numpy()
+            
+            # === Use same downstream logic ===
+            expr_agg = jnp.array(data_np.T)  # (n_genes, n_cells)
+            x = expr_agg.T                   # (n_cells, n_genes)
+            key, subk = random.split(key)
+            x = random.permutation(subk, x, axis=0)
+            
+            if reference_meanExpression is None:
+                reference_meanExpression = x.mean(axis=0)
+            # === END sergio-rs block ===
 
         is_trains.append(is_train)
         data.append(x)
         intv.append(ko_target)
         intv_strength.append(ko_multiplier)
 
-
-    # sort into train and test and convert to data format
     dataset_fields = defaultdict(lambda: defaultdict(list))
     for is_train, x, intv, intv_mults in zip(is_trains, data, intv, intv_strength):
-        dataset_fields[is_train]["data"].append(x[:config["n_samples"]])
-        dataset_fields[is_train]["intv"].append(intv.astype(int))
-        dataset_fields[is_train]["true_param"].append(k.T)
+        dataset_fields[is_train]["data"].append(np.array(x[:config["n_samples"]]))
+        dataset_fields[is_train]["intv"].append(np.array(intv).astype(int))
+        dataset_fields[is_train]["true_param"].append(np.array(k.T))
 
-    for key, ddict in dataset_fields.items():
+    for key_set, ddict in dataset_fields.items():
         for kkey, v in ddict.items():
-            if kkey != "data": # as for real data where number of observations might be different
-                dataset_fields[key][kkey] = np.stack(v)
+            if kkey != "data":
+                dataset_fields[key_set][kkey] = np.stack(v)
 
     if verbose:
-        print(f"Finished.")
+        print("Finished.")
 
     return Data(**dataset_fields[True]), Data(**dataset_fields[False])
 
 
 if __name__ == "__main__":
+    
+    seed = 0
 
-    _ = simulate(0, dict(
-        graph="erdos_renyi_acyclic",
-        edges_per_var=3,
-        n_vars=10,
-        n_unique_mr=3,
-        n_samples=100,
-        n_intv_train=2,
-        n_intv_test=2,
-        knockdown_min=0.1,
-        knockdown_max=0.9,
-        b_min=1.0,
-        b_max=4.0,
-        k_min=3,
-        k_max=10,
-        hill=2.0,
-        dt=0.01,
-        noise_type="dpd",
-        noise_params=0.5,
-        decays=0.8,
-        sampling_state=50,
-        coop=True,
-    ), verbose=False)
+    # _ = simulate(random.PRNGKey(seed), dict(
+    #     graph="erdos_renyi_acyclic", #scale_free_acyclic
+    #     edges_per_var=3,
+    #     n_vars=20,
+    #     n_unique_mr=10,
+    #     n_samples=1000,
+    #     n_intv_train=2,
+    #     n_intv_test=2,
+    #     knockdown_min=0.1,
+    #     knockdown_max=0.9,
+    #     b_min=1.0,
+    #     b_max=4.0,
+    #     k_min=3,
+    #     k_max=10,
+    #     hill=2.0,
+    #     dt=0.01,
+    #     noise_type="dpd",
+    #     noise_params=0.5,
+    #     decays=0.8,
+    #     sampling_state=50,
+    #     coop=True,
+    # ), verbose=False)
 
-    exit()
+    # exit()
+    
+    import sergio_rs
+    import numpy as np
+    import pandas as pd
+    
+    # === Extract config ===
+    n_vars = 20  # number_genes
+    n_bins = 10
+    n_samples=1000
+    num_cells = math.ceil(n_samples / n_bins)
+    noise_params = 0.5
+    noise_type = 'dpd'  # Not yet used in sergio-rs API
+    decays = 0.8  # List or array of length n_vars
+    sampling_state = 50  # Not used in sergio-rs yet
+    dt = 0.01
+    safety_steps = 100
+    k_coop = 2  # Hill coefficient
+    key = random.PRNGKey(seed)
+    ko_target = None
+    
+    # === Construct GRN ===
+    grn = sergio_rs.GRN()
+    decay_value = decays[0] if isinstance(decays, (list, np.ndarray)) else decays
+    
+    # Placeholder: add full connectivity or use your own graph
+    for i in range(n_vars):
+        for j in range(n_vars):
+            if i == j:
+                continue
+            reg = sergio_rs.Gene(name=f"g{i}", decay=decay_value)
+            tar = sergio_rs.Gene(name=f"g{j}", decay=decay_value)
+            grn.add_interaction(reg=reg, tar=tar, k=1.0, h=None, n=k_coop)
+    
+    grn.set_mrs()
+    
+    # === Create MR profile ===
+    mr_profile = sergio_rs.MrProfile.from_random(
+        grn,
+        num_cell_types=n_bins,
+        low_range=(0.0, 2.0),
+        high_range=(2.0, 4.0),
+        seed=seed
+    )
+    
+    # === Apply knockout if given ===
+    # if ko_target is not None:
+    #     grn.knockout([f"g{i}" for i in ko_target], ko_multiplier)
+    
+    # === Setup simulator ===
+    sim = sergio_rs.Sim(
+        grn=grn,
+        num_cells=num_cells,
+        noise_s=noise_params[0],  # Multiplicative noise only in current version
+        safety_iter=safety_steps,
+        scale_iter=10,
+        dt=dt,
+        seed=key
+    )
+    
+    # === Simulate ===
+    data = sim.simulate(mr_profile)
+    
+    # === Convert to 2D NumPy array ===
+    data_np = data.drop("Genes").to_numpy()
+

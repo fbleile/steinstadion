@@ -50,10 +50,12 @@ def run_nodags(seed, train_targets, config):
     noise_scale = np.diag(np.exp(nodags_wrapper.model.var.detach().cpu().numpy()))
 
     # make sampler from fitted parameters
-    def sampler(key, _, intv_theta, intv, n_samples):
+    def sampler(key, n_samples, *, intv_param=None):
         # shift intervention
         # [n_envs, N, d]
+        intv = intv_param.targets
         n_envs, d = intv.shape
+        intv_theta = intv_param._store
         shift = intv_theta["shift"] * intv
         x = []
         for shft, intv_set in zip(shift, intv):

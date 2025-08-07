@@ -8,7 +8,7 @@ from jax import numpy as jnp, random
 
 from stadion.core import Data
 
-from synthetic import make_linear_model_parameters, make_interventions, make_mask
+from stadion.synthetic import make_linear_model_parameters, make_interventions, make_mask
 from stadion.utils.tree import iter_tree
 
 from stadion.parameters import InterventionParameters
@@ -83,6 +83,9 @@ def synthetic_scm_data(key, config):
             intv_param=intv_params,
             marg_indeps=marg_indeps,
             true_param=jnp.tile(true_theta["w1"], (intv_msks.shape[0], 1, 1)),
+            # true_param=dict(
+            #     base_params=true_theta,
+            #     intv_params=intv_params),
         ).copy())
 
     return Data(**dataset_fields[0]), Data(**dataset_fields[1])

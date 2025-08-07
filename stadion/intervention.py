@@ -98,7 +98,7 @@ def search_intv_theta_shift(key, *, theta, intv_param, target_means, target_intv
         observ_means, observ_stds, is_observ_stable = \
             estimator(subk, intv_param=InterventionParameters(
                                             parameters = intv_theta,
-                                            targets = intv_param.targets,
+                                            targets = target_intv,
                                         ))
 
         log_dict["sanity/test-search/0-observ-stable"] = int(is_observ_stable.all())
@@ -181,7 +181,7 @@ def search_intv_theta_shift(key, *, theta, intv_param, target_means, target_intv
                 key, subk = random.split(key)
                 means, _, stable_i = estimator(subk, intv_param=InterventionParameters(
                                                 parameters = param,
-                                                targets = intv_param.targets,
+                                                targets = target_intv,
                                             ))
                 assert means.shape == target_means.shape
                 assert means[intv_sel].shape == stable_i.shape == (n_envs,)
@@ -296,7 +296,7 @@ def search_intv_theta_shift(key, *, theta, intv_param, target_means, target_intv
             key, subk = random.split(key)
             means, _, stable_i = estimator(subk, intv_param=InterventionParameters(
                                             parameters = param,
-                                            targets = intv_param.targets,
+                                            targets = target_intv,
                                         ))
 
             if not onp.all(stable_i | ~stable):

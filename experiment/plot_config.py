@@ -125,7 +125,7 @@ COLORS_3 = [
     "white",
     # "#e41a1c",
     "silver",
-    # "darkgrey",
+    "darkgrey",
     # "#d90d10",
     # "#d90d10",
     # "#ef476f",
@@ -151,8 +151,8 @@ METHODS_CONFIG = [
     ("nodags",              COLORS[1], False, "NODAGS"),
     ("kds-linear_u_diag", COLORS[2], True, r"\textbf{KDS (Linear)}"),
     ("kds-lnl_u_diag", COLORS[2], False, r"\textbf{KDS (MLP)}"),
-    ("ours-linear_u_diag", COLORS[2], True, r"\textbf{SKDS (Linear)}"),
-    ("ours-lnl_u_diag", COLORS[2], False, r"\textbf{SKDS (MLP)}"),
+    ("ours-linear_u_diag", COLORS[3], True, r"\textbf{SKDS (Linear)}"),
+    ("ours-lnl_u_diag", COLORS[3], False, r"\textbf{SKDS (MLP)}"),
     (TRUE,                  None,      True, "True"),
 ]
 

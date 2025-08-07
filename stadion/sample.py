@@ -2,9 +2,9 @@ import numpy as onp
 
 from stadion.core import make_target_standardizer, make_sergio_standardizer
 
-from synthetic import synthetic_sde_data
-from scm import synthetic_scm_data
-from stadion.utils.sergio import simulate as sergio_sampler
+from stadion.synthetic import synthetic_sde_data
+from stadion.scm import synthetic_scm_data
+from stadion.utils.sergio_module import simulate as sergio_sampler
 
 def make_data(*, key, config):
 
@@ -15,7 +15,7 @@ def make_data(*, key, config):
         standardizer = make_target_standardizer(train_tars.data[0])
         
         # remember eigenvalue information for analysis
-        mat = train_tars.true_param["weights"]
+        mat = train_tars.true_param[0]
         meta_data["mat_eigenvals"] = onp.sort(onp.real(onp.linalg.eigvals(mat)))
 
         # remember simulation logs for analysis
@@ -27,7 +27,7 @@ def make_data(*, key, config):
         standardizer = make_target_standardizer(train_tars.data[0], ignore=True)
 
         # remember eigenvalue information for analysis
-        mat = train_tars.true_param["weights"]
+        mat = train_tars.true_param[0]
         meta_data["mat_eigenvals"] = onp.sort(onp.real(onp.linalg.eigvals(mat)))
 
         # remember simulation logs for analysis

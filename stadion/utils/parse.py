@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from definitions import PROJECT_DIR, FILE_X, FILE_INTV, FILE_TRUE_PARAM, FILE_DATA_SANITY_CHECKS, FILE_TRAJ, \
     FILE_META_DATA
 from stadion.core import Data, get_intv_stats
-from plot_config import *
+from experiment.plot_config import *
 from stadion.utils.plot_data import scatter_matrix
 
 types_list = [list]

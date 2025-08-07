@@ -17,7 +17,7 @@ from collections import defaultdict
 from stadion.utils.parse import load_data, load_meta_data, dict_tree_to_ordered
 
 from stadion.utils.plot_data import scatter_matrix
-from stadion.experiment.plot_config import *
+from experiment.plot_config import *
 from stadion.utils.metrics import sortability
 
 from stadion.definitions import FOLDER_TRAIN, IS_CLUSTER, FILE_META_DATA

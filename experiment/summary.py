@@ -20,8 +20,8 @@ from pprint import pprint
 from ott.geometry import pointcloud
 
 from collections import defaultdict
-from stadion.experiment.plot import benchmark_summary, METRICS_CHECKS
-from stadion.experiment.plot_config import TRAIN_VALIDATION_METRICS, METRICS_TABLE_ORDERING, TRUE
+from experiment.plot import benchmark_summary, METRICS_CHECKS
+from experiment.plot_config import TRAIN_VALIDATION_METRICS, METRICS_TABLE_ORDERING, TRUE
 from stadion.utils.version_control import str2bool
 
 from stadion.utils.parse import load_methods_config, get_id, load_data, load_json, _ddicts_to_dicts
