@@ -59,8 +59,9 @@ To install the dependencies and set up the environment, please follow these step
 ## Usage & Results
 You can generate data and perform hyperparameter tuning with the following command:
 
-    ```bash
-    python hyperparam.py --submit --n_datasets 50 --only_methods ours-linear_u_diag ours-lnl_u_diag --only_gen_types linear-er scm-er
+```bash
+python hyperparam.py --submit --n_datasets 50 --only_methods ours-linear_u_diag ours-lnl_u_diag --only_gen_types linear-er scm-er
+```
 
 Refer to the Lorch Results section in the AISTATS 2024 paper for detailed evaluation and benchmark descriptions.
 
