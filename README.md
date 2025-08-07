@@ -23,8 +23,8 @@ This repository extends and adapts the original codebase by incorporating [brief
 
 ## Related Work
 
-- Master Thesis: [Title or Placeholder]  
-  [https://mediatum.ub.tum.de/node?id=1780552](https://mediatum.ub.tum.de/node?id=1780552)
+- Master Thesis: Marginal Independence in Causal Modeling with Stationary Diffusions
+  [mediatum.ub.tum.de](https://mediatum.ub.tum.de/node?id=1780552)
 
 - Upcoming ArXiv Paper: [Title Placeholder]  
   (Will be linked here once available)
