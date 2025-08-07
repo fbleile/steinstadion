@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software or include substantial contributions from this repository in your own work, please cite my Masters thesis as follows."
+authors:
+  - family-names: "Bleile"
+    given-names: "Fabian"
+title: "Marginal Independence in Causal Modeling with Stationary Diffusions"
+version: "masters thesis"
+doi: null
+date-released: "2025"
+identifiers:
+  - type: "URL"
+    value: "https://mediatum.ub.tum.de/node?id=1780552"
+abstract: "Stationary diffusion forms a causal modeling framework that leverages the stationary distribution of a stochastic differential equation (SDE) to describe system behavior under interventions. Unlike traditional causal models, stationary diffusions accommodate cyclic dependencies while maintaining a well-defined equilibrium. Learning a stationary diffusion entails estimating the parameters of a stochastic differential equation (SDE) such that its stationary distribution aligns with a given target. We build upon the kernel deviation from stationarity (KDS), a method that enforces stationarity by expressing the diffusion’s generator in a reproducing kernel Hilbert space. Drawing on the connection between KDS and Stein discrepancies, we introduce the Stein-type kernel deviation from stationarity (SKDS) as an alternative formulation. Empirically, SKDS matches the performance of KDS while significantly reducing computational cost. Moreover, we show that a vanishing SKDS guarantees that the learned diffusion’s stationary distribution coincides with the target distribution. Additionally, we explore methods for incorporating prior knowledge of independence relations. Recent results characterize independence conditions in stationary distributions using trek structures. Leveraging this, we propose a smooth penalty function that encourages the absence of specific treks, ensuring that the learned SDE respects predefined independence constraints."
+repository-code: ""
