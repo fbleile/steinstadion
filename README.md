@@ -1,7 +1,8 @@
 # Project Title
 
 ## Short Project Description
-This project builds upon the work of Lars Lorch et al. (2024) on **Causal Modeling with Stationary Diffusions**. It implements and extends their approach with minor modifications and additional features aimed at improving [briefly mention your key contribution if possible].
+This project builds upon the work of Lars Lorch et al. (2024) on **Causal Modeling with Stationary Diffusions**. It implements and extends their approach with minor modifications and additional features.
+The main attribution is the newly proposed loss function, called 'Stein-Type Kernel Deviation from Stationarity' (SKDS). The theory has been developed during the work on my Master Thesis 'Marginal Independence in Causal Modeling with Stationary Diffusions' [mediatum.ub.tum.de](https://mediatum.ub.tum.de/node?id=1780552)
 
 ---
 
@@ -17,7 +18,7 @@ International Conference on Artificial Intelligence and Statistics (AISTATS), 20
 The original implementation can be found here:  
 [https://github.com/larslorch/stadion/tree/main](https://github.com/larslorch/stadion/tree/main)
 
-This repository extends and adapts the original codebase by incorporating [briefly mention your key additions or changes].
+This repository extends and adapts the original codebase by incorporating the SKDS.
 
 ---
 
