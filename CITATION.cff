@@ -1,10 +1,10 @@
 cff-version: 1.2.0
-message: "If you use this software or include substantial contributions from this repository in your own work, please cite my Masters thesis as follows."
+message: "If you use this software or include substantial contributions from this repository in your own work, please cite my Master's thesis as follows."
 authors:
   - family-names: "Bleile"
     given-names: "Fabian"
 title: "Marginal Independence in Causal Modeling with Stationary Diffusions"
-version: "masters thesis"
+version: "master's thesis"
 doi: null
 date-released: "2025"
 identifiers:
