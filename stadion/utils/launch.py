@@ -25,7 +25,7 @@ def generate_run_commands(command_list=None,
                           array_command=None, array_indices=None, array_throttle=None,
                           n_cpus=1, n_gpus=0, dry=False, only_estimate_time=False,
                           mem=3000, length=None, hours=None, mins=59,
-                          mode='local', gpu_model=None, prompt=True, gpu_mtotal=None, gpu_enabled=False,
+                          mode='local', gpu_model=None, prompt=True, gpu_mtotal=None,
                           relaunch=False, relaunch_after=None, output_filename="", output_path_prefix=""):
 
     if only_estimate_time:
@@ -51,25 +51,25 @@ def generate_run_commands(command_list=None,
         # LRZ cluster cm4
         slurm_cmd += '--get-user-env '
         slurm_cmd += '--export=NONE ' # '--export=NONE '
-        slurm_cmd += '--clusters=cm4 '
-        slurm_cmd += '--partition=cm4_std '
-        slurm_cmd += '--qos=cm4_std '
-        slurm_cmd += '--nodes=2 '
-        slurm_cmd += '--ntasks-per-node=4 '
-        slurm_cmd += f'--cpus-per-task=32 '
+        slurm_cmd += '--clusters=serial '
+        slurm_cmd += '--partition=serial_std '
+        # slurm_cmd += '--qos=cm4_std '
+        slurm_cmd += '--nodes=1 '
+        slurm_cmd += '--ntasks-per-node=1 '
+        slurm_cmd += f'--cpus-per-task={n_cpus} '
         slurm_cmd += f'--mem={mem}M '  # mem in MB
 
 
         # GPU
-        if n_gpus > 0 and gpu_enabled:
+        if n_gpus > 0:
             if type(gpu_model) == list:
                 raise NotImplementedError("pass single gpu specifier correct gpu specifier")
 
-            gpu_model_spec = f'{gpu_model}:' if gpu_model is not None else ""
-            slurm_cmd += f'--gpus={gpu_model_spec}{n_gpus} '
+            # gpu_model_spec = f'{gpu_model}:' if gpu_model is not None else ""
+            slurm_cmd += '---gres=gpu:1 '
 
-            if gpu_mtotal is not None:
-                slurm_cmd += f'--gres=gpumem:{gpu_mtotal} ' # makes sure to select GPU with at least this MB memory
+            # if gpu_mtotal is not None:
+            #     slurm_cmd += f'--gres=gpumem:{gpu_mtotal} ' # makes sure to select GPU with at least this MB memory
 
         if is_array_job:
             command_list = [array_command]

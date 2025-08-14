@@ -206,7 +206,7 @@ class ExperimentManager:
                 array_command=cmd_final,
                 array_indices=range(1, n_datasets + 1),
                 mode=self.compute,
-                hours=1,
+                hours=2,
                 mins=59,
                 n_cpus=2,
                 n_gpus=0,
