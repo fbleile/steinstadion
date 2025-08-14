@@ -57,7 +57,7 @@ def launch_all(data_gen_types, args):
         hours=5,
         mins=0,
         n_cpus=4,
-        n_gpus=1,
+        n_gpus=0,
         mem=4000,
         prompt=False,
         output_path_prefix=None,

@@ -435,7 +435,7 @@ class ExperimentManager:
             hours=11,
             mins=59,
             n_cpus=4,
-            n_gpus=1,
+            n_gpus=0,
             mem=4000,
             prompt=False,
             dry=self.dry,
