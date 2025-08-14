@@ -113,9 +113,7 @@ def generate_run_commands(command_list=None,
 
             # add relaunch
             if not relaunch:
-                # cluster_cmds.append(slurm_cmd_run + " --wrap \"" + python_cmd + "\"")
-                full_cmd = f"module load slurm_setup; module load python; {python_cmd}"
-                cluster_cmds.append(slurm_cmd_run + f' --wrap "{full_cmd}"')
+                cluster_cmds.append(slurm_cmd_run + " --wrap \"" + python_cmd + "\"")
             else:
                 relaunch_flags = f" --relaunch True " \
                                  f" --relaunch_str \'" + slurm_cmd_run.replace("\"", "\\\"") + "\' "
