@@ -79,9 +79,6 @@ if __name__ == "__main__":
         args.run_methods = True
         args.run_summary = True
 
-
-    args = parser.parse_args()
-
     selected_gen_types = args.only_gen_types or DEFAULT_DATA_GEN_TYPES
     launch_all(selected_gen_types, args)
 
