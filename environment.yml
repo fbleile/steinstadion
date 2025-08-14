@@ -20,15 +20,14 @@ dependencies:
   - sympy=1.13.1
   - xgboost=3.0.2
   - pytorch=2.6.0
-  - tensorflow=2.18.0
-  - tensorboard=2.18.0
-  - jax=0.6.2
-  - jaxlib=0.6.2
-  - flax=0.10.7
-  - optax=0.2.4
-  - chex=0.1.88
+  - cpuonly
   - pip
   - pip:
+      - flax==0.10.7
+      - jax==0.6.2
+      - jaxlib==0.6.2
+      - optax==0.2.4
+      - chex==0.1.88
       - absl-py==2.1.0
       - astunparse==1.6.3
       - autograd==1.7.0
@@ -42,5 +41,4 @@ dependencies:
       - pyro-ppl==1.9.1
       - umap==0.1.1
       - wandb==0.19.5
-
-
+      - tensorflow==2.18.0
