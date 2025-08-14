@@ -33,6 +33,7 @@ def generate_run_commands(command_list=None,
 
     # check if single or array
     is_array_job = array_command is not None and array_indices is not None
+    print(is_array_job, array_command is not None, array_indices is not None)
     assert (command_list is not None) or is_array_job
     if is_array_job:
         assert all([(ind.isdigit() if type(ind) != int else True) for ind in array_indices]), f"array indices must be positive ints but got `{array_indices}`"
@@ -106,6 +107,7 @@ def generate_run_commands(command_list=None,
                 "module load python && "
                 "source ~/miniconda3/etc/profile.d/conda.sh && "
                 "conda activate steinstadion-env && "
+                "export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion "
             )
             
             # add relaunch
