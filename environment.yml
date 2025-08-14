@@ -38,9 +38,6 @@ dependencies:
       - pgmpy==1.0.0
       - pyro-ppl==1.9.1
       - sympy==1.13.1
-      - tensorboard==2.18.0
-      - tensorflow==2.18.0
-      - torch==2.6.0
       - umap==0.1.1
       - wandb==0.19.5
       - xgboost==3.0.2

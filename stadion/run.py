@@ -4,14 +4,11 @@ import traceback
 import copy
 import pandas as pd
 import wandb
-import os
-
-import torch
-
-from multiprocessing import Pool, get_context
 from functools import partial
 
 from tabulate import tabulate
+
+from multiprocessing import get_context
 
 import jax
 from jax import random
@@ -25,7 +22,6 @@ from stadion.sample import make_data
 from stadion.utils.parse import load_config, expand_config
 from stadion.utils.version_control import get_gpu_info, get_gpu_info2
 from stadion.utils.metrics import make_mse, make_wasserstein
-from stadion.utils.NN_dim_bandwidth import NeuralNetwork
 
 from stadion.models import LinearSDE, MLPSDE
 from stadion.parameters import InterventionParameters
@@ -380,14 +376,6 @@ def run_single_config(config_and_key):
     data_key, train_targets, test_targets, _ = dataset.values()
     config["d"] = train_targets.data[0].shape[-1]
 
-    # Prepare input for the model
-    input_data = torch.tensor([[config["d"], config["k_param"]]], dtype=torch.float32)
-    
-    # Make the prediction
-    with torch.no_grad():
-        avg_kernel = model_dim_bandwidth(input_data).item()
-        config["kernel_reg"] = (avg_kernel)**(-1)
-
     
     model_log = {
         "data_key": data_key, 
@@ -431,10 +419,6 @@ def hyperparam_tuning_wandb(seed, data_config_str=None, model_config_str=None):
         # Define relative path from the current working directory
         # relative_path = os.path.join(os.path.dirname(__file__), 'utils', 'dim_bandwidth_model.pth')
         
-        # Load the model
-        model_dim_bandwidth = torch.load('/Users/bleile/Master/Thesis Work/CausalDiffusion/utils/dim_bandwidth_model.pth', weights_only=False)
-        model_dim_bandwidth.eval()
-        
         """++++++++++++++   Data ++++++++++++++"""
         print("\nSimulating data...", flush=True)
         data_config = load_config(data_config_str, abspath=True)
@@ -460,7 +444,7 @@ def hyperparam_tuning_wandb(seed, data_config_str=None, model_config_str=None):
         
         # Prepare the data to pass to the Pool
         config_and_key_and_dataset_list = [
-            (config, key, datasets[i], model_dim_bandwidth) for i in datasets for config in model_master_expanded_configs
+            (config, key, datasets[i]) for i in datasets for config in model_master_expanded_configs
         ]
         
         # # Parallelize the runs with controlled parallelism
