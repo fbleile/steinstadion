@@ -62,8 +62,8 @@ def generate_run_commands(command_list=None,
         # slurm_cmd += f'--mem-per-cpu={mem} '
         
         # LRZ cluster cm4
-        slurm_cmd += '--get-user-env'
-        slurm_cmd += '--export=NONE'
+        slurm_cmd += '--get-user-env '
+        slurm_cmd += '--export=NONE '
         slurm_cmd += '--clusters=cm4 '
         slurm_cmd += '--partition=cm4_std '
         slurm_cmd += '--qos=cm4_std '
