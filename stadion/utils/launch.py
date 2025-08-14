@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import datetime
+import time
 
 import warnings
 warnings.formatwarning = lambda msg, category, path, lineno, file: f"{path}:{lineno}: {category.__name__}: {msg}\n"
@@ -43,27 +44,13 @@ def generate_run_commands(command_list=None,
 
         if only_estimate_time:
             slurm_cmd += "--test-only "
-
-        # Wall-clock time  hours:minutes:secs
-        if length == "very_long":
-            slurm_cmd += f'--time=119:{mins}:00 '
-        elif length == "long":
-            slurm_cmd += f'--time=23:{mins}:00 '
-        elif length == "short":
-            slurm_cmd += f'--time=3:{mins}:00 '
-        elif length is None:
-            assert hours is not None and int(hours) >= 0
-            slurm_cmd += f'--time={int(hours)}:{mins}:00 '
-        else:
-            raise NotImplementedError(f"length `{length}` not implemented")
-
-        # CPU memory and CPUs
-        # slurm_cmd += f'-n {n_cpus} ' # Number of CPUs
-        # slurm_cmd += f'--mem-per-cpu={mem} '
+        
+        assert hours is not None and int(hours) >= 0
+        slurm_cmd += f'--time={int(hours)}:{mins}:00 '
         
         # LRZ cluster cm4
         slurm_cmd += '--get-user-env '
-        slurm_cmd += '--export=NONE '
+        slurm_cmd += '--export=ALL ' # '--export=NONE '
         slurm_cmd += '--clusters=cm4 '
         slurm_cmd += '--partition=cm4_std '
         slurm_cmd += '--qos=cm4_std '
@@ -100,8 +87,10 @@ def generate_run_commands(command_list=None,
 
             job_descr = job_descr.replace("\$SLURM_ARRAY_TASK_ID", "%a")
             slurm_cmd_run = slurm_cmd
-            slurm_cmd_run += f'-J "{output_filename}{job_descr}" '
+            unique_id = str(int(time.time()))[-4:]  # last 4 digits of epoch
+            slurm_cmd_run += f'-J "{(output_filename + job_descr)[:6]}{unique_id}" '
             slurm_cmd_run += f'-o "{output_path_prefix}slurm-{output_filename}{job_descr}.txt" '
+            slurm_cmd_run += f'-D  ./'
 
             if is_array_job:
                 if type(array_indices) == range:
@@ -111,20 +100,33 @@ def generate_run_commands(command_list=None,
                 else:
                     slurm_cmd_run += f'--array {",".join([str(ind) for ind in array_indices])}'
 
+            # Common environment setup for SLURM jobs
+            env_setup = (
+                "module load slurm_setup && "
+                "module load python && "
+                "source ~/miniconda3/etc/profile.d/conda.sh && "
+                "conda activate steinstadion-env && "
+            )
+            
             # add relaunch
             if not relaunch:
-                cluster_cmds.append(slurm_cmd_run + " --wrap \"" + python_cmd + "\"")
+                cluster_cmds.append(slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + '"')
             else:
-                relaunch_flags = f" --relaunch True " \
-                                 f" --relaunch_str \'" + slurm_cmd_run.replace("\"", "\\\"") + "\' "
+                relaunch_flags = (
+                    " --relaunch True "
+                    " --relaunch_str '" + slurm_cmd_run.replace('"', '\\"') + "' "
+                )
                 if relaunch_after is None:
                     relaunch_flags += f' --relaunch_after {60 * (119 if length == "very_long" else (23 if length == "long" else 3))} '
                 else:
                     relaunch_flags += f' --relaunch_after {relaunch_after} '
-
+            
                 # add datetime to slurm command only after relaunch flags are set
-                slurm_cmd_run = slurm_cmd_run.replace(".out", f"_{datetime.datetime.now().strftime('%d-%m-%H:%M')}.out")
-                cluster_cmds.append(slurm_cmd_run + " --wrap \"" + python_cmd + relaunch_flags  +"\"")
+                slurm_cmd_run = slurm_cmd_run.replace(
+                    ".out", f"_{datetime.datetime.now().strftime('%d-%m-%H:%M')}.out"
+                )
+                cluster_cmds.append(slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + relaunch_flags + '"')
+
 
         if prompt and not dry:
             answer = input(f"About to submit {len(cluster_cmds)} compute jobs to the cluster. Proceed? [yes/no]")
