@@ -31,6 +31,7 @@ CONFIG_DIR = PROJECT_DIR / SUBDIR_EXPERIMENTS
 EXPERIMENT_DATA = "data"
 EXPERIMENT_PREDS = "predictions"
 EXPERIMENT_SUMMARY = "summary"
+EXPERIMENT_SUMMARY_VALIDATION = "summary_validation"
 EXPERIMENT_DATA_SUMMARY = "data_summary"
 
 EXPERIMENT_CONFIG_DATA = "data.yaml"
@@ -54,6 +55,15 @@ BASELINE_LLC = "llc"
 BASELINE_NODAGS = "nodags"
 BASELINE_KDS = "kds"
 BASELINE_OURS = "ours"
+
+DEFAULT_DATA_GEN_TYPES = [
+    "linear-er",
+    "linear-sf",
+    "scm-er",
+    "scm-sf",
+    "sergio-er",
+    "sergio-sf",
+]
 
 NAN_MIN = -1e4
 NAN_MAX = 1e4

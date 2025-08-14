@@ -87,7 +87,7 @@ class MetricsComputer(object):
 
         x_train, intv_train = train_targets.data, train_targets.intv
         x_test, intv_test = test_targets.data, test_targets.intv
-
+        
         # load predictions
         samples_train = pred["samples_train"]
         samples_test = pred["samples_test"]
@@ -103,13 +103,15 @@ class MetricsComputer(object):
         ]:
             if not self.kwargs.train_validation or any([(tup[0] in metr) for metr in TRAIN_VALIDATION_METRICS]):
                 metric_list.append(tup)
-
+        
         for prefix, metr_fun_envs, ave in metric_list:
             metr_train, imetr_train = metr_fun_envs(samples_train, x_train, intv_train)
             metr_test, imetr_test = metr_fun_envs(samples_test, x_test, intv_test)
-
-            results[f"{prefix}_train"] = [metr_train[1:].mean().item()] if ave else metr_train[1:].tolist()
-            results[f"i{prefix}_train"] = [imetr_train[1:].mean().item()] if ave else imetr_train[1:].tolist()
+            
+            print(metr_train, imetr_train)
+            
+            results[f"{prefix}_train"] = [metr_train[1:].mean().item()] if ave else metr_train.tolist() # metr_train[1:].tolist()
+            results[f"i{prefix}_train"] = [imetr_train[1:].mean().item()] if ave else imetr_train.tolist() # imetr_train[1:].tolist()
 
             results[f"{prefix}_test"] = [metr_test.mean().item()] if ave else metr_test.tolist()
             results[f"i{prefix}_test"] = [imetr_test.mean().item()] if ave else imetr_test.tolist()
@@ -228,7 +230,7 @@ class MetricsComputer(object):
             except TypeError:
                 pass  # nan not well-defined
         
-        return results, samples, param
+        return results, samples, param, task_id
 
 # === FUNCTION ===
 def parse_method_name(full_method_name):
@@ -259,7 +261,12 @@ def make_summary(summary_path, data_paths, result_paths, kwargs):
     """
 
     # method: dict of metrics
-    results = defaultdict(lambda: defaultdict(list))
+    results = defaultdict(  # method
+        lambda: defaultdict(  # metric
+            lambda: defaultdict(list)  # task_id → list of values
+        )
+    )
+
     samples_all = defaultdict(lambda: defaultdict(dict))
     params_all = defaultdict(dict)
 
@@ -328,15 +335,18 @@ def make_summary(summary_path, data_paths, result_paths, kwargs):
         # pool.terminate()
         # pool.join()
 
-        results_method, samples_method, param_method = zip(*[compute_metrics(inpt) for inpt in method_paths])
-
+        results_method, samples_method, param_method, task_id_method = zip(*[compute_metrics(inpt) for inpt in method_paths])
+        
+        results_by_tasks = list(zip(results_method, task_id_method))
+        
         # aggregate results
-        for result in results_method:
+        for (result, task_id) in results_by_tasks:
+            print(task_id)
             for metr, val in result.items():
                 if type(val) == list:
-                    results[method][metr].extend(val)
+                    results[method][metr][task_id].extend(val)
                 else:
-                    results[method][metr].append(val)
+                    results[method][metr][task_id].append(val)
 
         for path, sample, param in zip(method_paths, samples_method, param_method):
             task_id = get_id(path)
@@ -348,9 +358,11 @@ def make_summary(summary_path, data_paths, result_paths, kwargs):
     params_all = dict(**params_all)
 
     # sanity checks
-    # modes = [(True, "median")]
-    # modes = [(True, "median"), (False, "mean")]
-    modes = [(False, "mean"), (True, "median")]
+    if kwargs.train_validation:
+        modes = [(True, "median")] # [(False, "mean"), (True, "median")]
+    else:
+        modes = [(True, "mean")]
+    
     # modes = [(False, "mean")]
     for j, (median_mode, subfolder) in enumerate(modes):
 
@@ -401,7 +413,7 @@ def make_summary(summary_path, data_paths, result_paths, kwargs):
                                 "wasser_test",
                                 "mse_test",
                                 "relmse_test",
-                              ], skip_plot=j != (len(modes) - 1))
+                              ], skip_plot=True) #j != (len(modes) - 1)
         
         # Write best hyperparams to config
         if kwargs.train_validation and kwargs.inject_hyperparams:

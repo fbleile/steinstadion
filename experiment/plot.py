@@ -176,14 +176,15 @@ def benchmark_summary(kwargs, save_path, method_results_input, samples_all, para
     plot_path = save_path.parent / f"plots-{save_path.stem}"
 
     # preprocess results
-    metric_results_dict = defaultdict(dict)
-    for method, d in method_results_input.items():
-        for metr, l in d.items():
+    metric_results_dict = defaultdict(lambda: defaultdict(list))
+    for method, d_metrics in method_results_input.items():
+        for metr, d_tasks in d_metrics.items():
             if only_metrics is not None and metr not in only_metrics:
                 continue
             if without_metrics is not None and metr in without_metrics:
                 continue
-            metric_results_dict[metr][method] = l
+            for task_id, l in d_tasks.items():
+                metric_results_dict[metr][method].extend(l)
 
     # impose metric ordering
     metric_results = dict_to_ordered_list(metric_results_dict, METRICS_TABLE_ORDERING)
@@ -201,11 +202,17 @@ def benchmark_summary(kwargs, save_path, method_results_input, samples_all, para
 
     # create long list of (metric, method, value) tuples which are then aggregated into a df
     df = []
-    for metric, res in metric_results:
-        for m, l in res.items():
-            for v in l:
-                df.append((metric, m, v))
-    df = pd.DataFrame(df, columns=["metric", "method", "val"])
+    for method, d_metrics in method_results_input.items():
+        for metric, d_tasks in d_metrics.items():
+            if only_metrics is not None and metric not in only_metrics:
+                continue
+            if without_metrics is not None and metric in without_metrics:
+                continue
+            for task_id, l in d_tasks.items():
+                for env_idx, v in enumerate(l):
+                    env_ = 'test' if 'test' in metric else 'train'
+                    df.append((metric, method, v, env_ + str(task_id), env_idx))
+    df = pd.DataFrame(df, columns=["metric", "method", "val", "data_idx", "env_idx"])
 
     if df.empty:
         warn_str = f"\nNo results reported for metrics: {metrics_descr} "\
@@ -310,7 +317,9 @@ def benchmark_summary(kwargs, save_path, method_results_input, samples_all, para
     if only_metrics is not None and only_metrics == METRICS_CHECKS:
         return
 
-
+    
+    if skip_plot:
+        return
     """ ------------ Metric figures ------------ """
     print("\nStarting plots...", flush=True)
 
@@ -430,8 +439,6 @@ def benchmark_summary(kwargs, save_path, method_results_input, samples_all, para
 
 
     """ ------------ param vs true ------------ """
-    if skip_plot:
-        return
 
     # get observational reference dists
     reference_data = {}

@@ -65,6 +65,13 @@ kds-linear_u_diag:
 
   model: linear_u_diag
 
+  # objective
+  objective_fun: kds
+  estimator: linear
+
+  # kernel
+  kernel: rbf
+
   bandwidth: 5.0
   reg_strength: 0.1
 
@@ -111,6 +118,13 @@ kds-lnl_u_diag:
   mlp_hidden: 8
   mlp_activation: sigmoid
   mlp_init: uniform
+
+  # kernel
+  kernel: rbf
+
+  # objective
+  objective_fun: kds
+  estimator: linear
 
   bandwidth: 3.0
   reg_strength: 0.1

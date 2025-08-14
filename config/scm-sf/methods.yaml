@@ -65,6 +65,13 @@ kds-linear_u_diag:
   bandwidth: 5.0
   reg_strength: 0.03
 
+  # objective
+  objective_fun: kds
+  estimator: linear
+
+  # kernel
+  kernel: rbf
+
   # optimization
   batch_size: 512
   batch_size_env: 1
@@ -108,6 +115,13 @@ kds-lnl_u_diag:
   mlp_hidden: 8
   mlp_activation: sigmoid
   mlp_init: uniform
+
+  # kernel
+  kernel: rbf
+
+  # objective
+  objective_fun: kds
+  estimator: linear
 
   bandwidth: 5.0
   reg_strength: 0.003

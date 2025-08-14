@@ -58,8 +58,20 @@ def generate_run_commands(command_list=None,
             raise NotImplementedError(f"length `{length}` not implemented")
 
         # CPU memory and CPUs
-        slurm_cmd += f'-n {n_cpus} ' # Number of CPUs
-        slurm_cmd += f'--mem-per-cpu={mem} '
+        # slurm_cmd += f'-n {n_cpus} ' # Number of CPUs
+        # slurm_cmd += f'--mem-per-cpu={mem} '
+        
+        # LRZ cluster cm4
+        slurm_cmd += '--get-user-env'
+        slurm_cmd += '--export=NONE'
+        slurm_cmd += '--clusters=cm4 '
+        slurm_cmd += '--partition=cm4_std '
+        slurm_cmd += '--qos=cm4_std '
+        slurm_cmd += '--nodes=1 '
+        slurm_cmd += '--ntasks-per-node=1 '
+        slurm_cmd += f'--cpus-per-task={n_cpus} '
+        slurm_cmd += f'--mem={mem}M '  # mem in MB
+
 
         # GPU
         if n_gpus > 0:
@@ -101,7 +113,9 @@ def generate_run_commands(command_list=None,
 
             # add relaunch
             if not relaunch:
-                cluster_cmds.append(slurm_cmd_run + " --wrap \"" + python_cmd + "\"")
+                # cluster_cmds.append(slurm_cmd_run + " --wrap \"" + python_cmd + "\"")
+                full_cmd = f"module load slurm_setup; module load python; {python_cmd}"
+                cluster_cmds.append(slurm_cmd_run + f' --wrap "{full_cmd}"')
             else:
                 relaunch_flags = f" --relaunch True " \
                                  f" --relaunch_str \'" + slurm_cmd_run.replace("\"", "\\\"") + "\' "

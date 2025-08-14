@@ -28,6 +28,7 @@ from definitions import (
     EXPERIMENT_DATA,
     EXPERIMENT_PREDS,
     EXPERIMENT_SUMMARY,
+    EXPERIMENT_SUMMARY_VALIDATION,
     EXPERIMENT_DATA_SUMMARY,
     YAML_RUN,
     DEFAULT_RUN_KWARGS,
@@ -379,6 +380,7 @@ class ExperimentManager:
         path_results = self.launch_methods(check=True, train_validation=train_validation, select_results=select_results)
 
         # init results folder
+        subdir = EXPERIMENT_SUMMARY_VALIDATION if train_validation else EXPERIMENT_SUMMARY
         path_plots = self._init_folder(EXPERIMENT_SUMMARY, inherit_from=path_results)
         if self.dry:
             shutil.rmtree(path_plots)
@@ -420,7 +422,7 @@ class ExperimentManager:
               
         if train_validation:
             cmd += f"--train_validation "
-        if train_validation:
+        if train_validation and inject_hyperparams:
             cmd += f"--inject_hyperparams "
         if wasser_eps is not None:
             cmd += f"--wasser_eps {wasser_eps} "
@@ -505,7 +507,7 @@ if __name__ == '__main__':
     else:
         raise ValueError("Unknown option passed")
 
-# !python manager.py scm-er --data --submit --n_datasets=50 9:19
+# !python manager.py scm-er --data --submit --n_datasets=50
 # !python manager.py scm-er --methods_train_validation --n_datasets 50 --submit --only_methods ours-lnl_u_diag ours-linear_u_diag
 # !python manager.py scm-er --summary_train_validation --n_datasets 50 --submit --only_methods ours-lnl_u_diag ours-linear_u_diag
 # !python manager.py scm-er --methods --submit --n_datasets=1 --only_methods kds-lnl_u_diag kds-linear_u_diag
