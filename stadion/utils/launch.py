@@ -24,7 +24,7 @@ def generate_run_commands(command_list=None,
                           array_command=None, array_indices=None, array_throttle=None,
                           n_cpus=1, n_gpus=0, dry=False, only_estimate_time=False,
                           mem=3000, length=None, hours=None, mins=59,
-                          mode='local', gpu_model=None, prompt=True, gpu_mtotal=None,
+                          mode='local', gpu_model=None, prompt=True, gpu_mtotal=None, gpu_enabled=False,
                           relaunch=False, relaunch_after=None, output_filename="", output_path_prefix=""):
 
     if only_estimate_time:
@@ -74,7 +74,7 @@ def generate_run_commands(command_list=None,
 
 
         # GPU
-        if n_gpus > 0:
+        if n_gpus > 0 and gpu_enabled:
             if type(gpu_model) == list:
                 raise NotImplementedError("pass single gpu specifier correct gpu specifier")
 
