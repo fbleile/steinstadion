@@ -50,13 +50,13 @@ def generate_run_commands(command_list=None,
         
         # LRZ cluster cm4
         slurm_cmd += '--get-user-env '
-        slurm_cmd += '--export=ALL ' # '--export=NONE '
+        slurm_cmd += '--export=NONE ' # '--export=NONE '
         slurm_cmd += '--clusters=cm4 '
         slurm_cmd += '--partition=cm4_std '
         slurm_cmd += '--qos=cm4_std '
-        slurm_cmd += '--nodes=1 '
-        slurm_cmd += '--ntasks-per-node=1 '
-        slurm_cmd += f'--cpus-per-task={n_cpus} '
+        slurm_cmd += '--nodes=2 '
+        slurm_cmd += '--ntasks-per-node=4 '
+        slurm_cmd += f'--cpus-per-task=32 '
         slurm_cmd += f'--mem={mem}M '  # mem in MB
 
 
