@@ -17,28 +17,30 @@ dependencies:
   - statsmodels=0.14
   - networkx=3.3
   - tqdm=4.66
+  - sympy=1.13.1
+  - xgboost=3.0.2
+  - pytorch=2.6.0
+  - tensorflow=2.18.0
+  - tensorboard=2.18.0
+  - jax=0.6.2
+  - jaxlib=0.6.2
+  - flax=0.10.7
+  - optax=0.2.4
+  - chex=0.1.88
   - pip
   - pip:
       - absl-py==2.1.0
       - astunparse==1.6.3
       - autograd==1.7.0
       - causaldag==0.1a163
-      - chex==0.1.88
-      - cma==4.3.0
       - conditional-independence==0.1a6
       - dm-tree==0.1.9
       - einops==0.8.1
       - etils==1.11.0
-      - flax==0.10.7
-      - jax==0.6.2
-      - jaxlib==0.6.2
-      - keras==3.8.0
       - opt-einsum==3.4.0
-      - optax==0.2.4
       - pgmpy==1.0.0
       - pyro-ppl==1.9.1
-      - sympy==1.13.1
       - umap==0.1.1
       - wandb==0.19.5
-      - xgboost==3.0.2
+
 
