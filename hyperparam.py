@@ -10,26 +10,34 @@ from stadion.utils.launch import generate_run_commands
 from definitions import DEFAULT_DATA_GEN_TYPES
 
 def make_cmds(exp, args):
-    methods_str = " ".join(args.only_methods)
-    return [
-        (
+    methods_str = " ".join(args.only_methods or [])
+    cmds = []
+
+    if args.run_data:
+        cmds.append(
             f"python manager.py {exp} "
-            f"--data --submit --n_datasets={args.n_datasets}"
+            f"--data --submit --n_datasets={args.n_datasets} "
             f"--compute {args.compute}"
-        ),
-        (
+        )
+
+    if args.run_methods:
+        cmds.append(
             f"python manager.py {exp} "
             f"--methods_train_validation --n_datasets {args.n_datasets} "
-            f"--submit --only_methods {methods_str}"
+            f"--submit --only_methods {methods_str} "
             f"--compute {args.compute}"
-        ),
-        (
+        )
+
+    if args.run_summary:
+        cmds.append(
             f"python manager.py {exp} "
             f"--summary_train_validation --n_datasets {args.n_datasets} "
-            f"--submit --only_methods {methods_str}"
+            f"--submit --only_methods {methods_str} "
             f"--compute {args.compute}"
-        ),
-    ]
+        )
+
+    return cmds
+
 
 def launch_all(data_gen_types, args):
     all_commands = []
@@ -58,6 +66,19 @@ if __name__ == "__main__":
     parser.add_argument("--compute", type=str, default="local", choices=["local", "cluster"])
     parser.add_argument("--only_gen_types", nargs="+", choices=DEFAULT_DATA_GEN_TYPES,
                         help="Restrict to specified data generation types")
+    
+    parser.add_argument("--run_data", action="store_true", help="Run the --data step")
+    parser.add_argument("--run_methods", action="store_true", help="Run the --methods_train_validation step")
+    parser.add_argument("--run_summary", action="store_true", help="Run the --summary_train_validation step")
+    
+    args = parser.parse_args()
+    
+    # If none of the run flags are explicitly passed, default to all True
+    if not (args.run_data or args.run_methods or args.run_summary):
+        args.run_data = True
+        args.run_methods = True
+        args.run_summary = True
+
 
     args = parser.parse_args()
 
@@ -65,4 +86,8 @@ if __name__ == "__main__":
     launch_all(selected_gen_types, args)
 
 # sample usage
-# python hyperparam.py --submit --n_datasets 50 --only_methods ours-linear_u_diag ours-lnl_u_diag
+# python hyperparam.py --submit --n_datasets 50
+
+# python hyperparam.py --run_data --n_datasets 50         # Only data
+# python hyperparam.py --run_summary --n_datasets 50      # Only summary
+# python hyperparam.py --run_data --run_methods            # Data + methods, skip summar
