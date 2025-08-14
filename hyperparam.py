@@ -21,20 +21,25 @@ def make_cmds(exp, args):
         )
 
     if args.run_methods:
-        cmds.append(
-            f"python manager.py {exp} "
-            f"--methods_train_validation --n_datasets {args.n_datasets} "
-            f"--submit --only_methods {methods_str} "
-            f"--compute {args.compute}"
-        )
+        cmd = "python manager.py " + exp + " "
+        cmd += "--methods_train_validation --n_datasets " + str(args.n_datasets) + " "
+        if args.only_methods is not None:
+            cmd += "--only_methods " + methods_str + " "
+        cmd += "--submit "
+        cmd += "--compute " + str(args.compute)
+        cmds.append(cmd)
+
 
     if args.run_summary:
-        cmds.append(
-            f"python manager.py {exp} "
-            f"--summary_train_validation --n_datasets {args.n_datasets} "
-            f"--submit --only_methods {methods_str} "
-            f"--compute {args.compute}"
-        )
+        cmd = "python manager.py " + exp + " "
+        cmd += "--summary_train_validation --n_datasets " + str(args.n_datasets) + " "
+        if args.only_methods is not None:
+            cmd += "--only_methods " + methods_str + " "
+        cmd += "--submit "
+        cmd += "--compute " + str(args.compute)
+        
+        cmds.append(cmd)
+
 
     return cmds
 
