@@ -465,7 +465,7 @@ if __name__ == '__main__':
     parser.add_argument("--scratch", action="store_true")
 
     parser.add_argument("--n_datasets", type=int, help="overwrites default specified in config")
-    parser.add_argument("--only_methods", nargs="+", type=str)
+    parser.add_argument("--only_methods",nargs="*",type=str,)
     parser.add_argument("--wasser_eps", type=float)
     parser.add_argument("--select_results", type=str)
     parser.add_argument("--subdir_results", type=str)
