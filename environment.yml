@@ -37,7 +37,6 @@ dependencies:
       - optax==0.2.4
       - pgmpy==1.0.0
       - pyro-ppl==1.9.1
-      - scipy==1.11.4
       - sympy==1.13.1
       - tensorboard==2.18.0
       - tensorflow==2.18.0
