@@ -102,6 +102,7 @@ def generate_run_commands(command_list=None,
 
             # Common environment setup for SLURM jobs
             env_setup = (
+                "bash -c '"
                 "module load slurm_setup && "
                 "module load python && "
                 "source ~/miniconda3/etc/profile.d/conda.sh && "
@@ -109,9 +110,10 @@ def generate_run_commands(command_list=None,
                 "export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion && "
             )
             
-            # add relaunch
             if not relaunch:
-                cluster_cmds.append(slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + '"')
+                cluster_cmds.append(
+                    slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + '"\''
+                )
             else:
                 relaunch_flags = (
                     " --relaunch True "
