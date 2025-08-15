@@ -74,7 +74,7 @@ def generate_run_commands(command_list=None,
         if is_array_job:
             command_list = [array_command]
 
-        for python_cmd in command_list:
+        for i, python_cmd in enumerate(command_list):
 
             # add job descr
             if "--descr" in python_cmd:
@@ -90,7 +90,7 @@ def generate_run_commands(command_list=None,
             unique_id = str(int(time.time()))[-4:]  # last 4 digits of epoch
             slurm_cmd_run += f'-J "{(output_filename + job_descr)[:6]}{unique_id}" '
             slurm_cmd_run += f'-o "{output_path_prefix}slurm-{output_filename}{job_descr}.txt" '
-            slurm_cmd_run += f'-D  ./'
+            slurm_cmd_run += f'-D  ./ '
 
             if is_array_job:
                 if type(array_indices) == range:
