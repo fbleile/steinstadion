@@ -112,7 +112,7 @@ def generate_run_commands(command_list=None,
             
             if not relaunch:
                 cluster_cmds.append(
-                    slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + '"\''
+                    slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + '\'"'
                 )
             else:
                 relaunch_flags = (
