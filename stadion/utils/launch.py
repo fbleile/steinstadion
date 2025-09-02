@@ -33,6 +33,8 @@ def generate_run_commands(command_list=None,
 
     # check if single or array
     is_array_job = array_command is not None and array_indices is not None
+    n_array_jobs = len(array_command) if is_array_job else 1
+    
     assert (command_list is not None) or is_array_job
     if is_array_job:
         assert all([(ind.isdigit() if type(ind) != int else True) for ind in array_indices]), f"array indices must be positive ints but got `{array_indices}`"
@@ -48,14 +50,14 @@ def generate_run_commands(command_list=None,
         assert hours is not None and int(hours) >= 0
         slurm_cmd += f'--time={int(hours)}:{mins}:00 '
         
-        # LRZ cluster cm4
+        # LRZ cluster serial
         slurm_cmd += '--get-user-env '
         slurm_cmd += '--export=ALL' # '--export=NONE '
         slurm_cmd += '--clusters=serial '
-        slurm_cmd += '--partition=teramem_inter '
+        slurm_cmd += '--partition=serial_std '
         # slurm_cmd += '--qos=cm4_std '
-        slurm_cmd += '--nodes=1 '
-        slurm_cmd += '--ntasks-per-node=1 '
+        # slurm_cmd += f'--nodes={n_nodes} '
+        # slurm_cmd += f'--ntasks={int(n_array_jobs / n_nodes)} '
         slurm_cmd += f'--cpus-per-task={n_cpus} '
         slurm_cmd += f'--mem={mem}M '  # mem in MB
 
