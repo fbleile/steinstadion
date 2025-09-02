@@ -106,7 +106,7 @@ def generate_run_commands(command_list=None,
                 "module load slurm_setup && "
                 "module load python && "
                 "source ~/miniconda3/etc/profile.d/conda.sh && "
-                "conda activate steinstadion-env && "
+                "source activate steinstadion-env && " # conda activate / source activate
                 "export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion && "
             )
             
