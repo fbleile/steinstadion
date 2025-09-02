@@ -50,7 +50,7 @@ def generate_run_commands(command_list=None,
         
         # LRZ cluster cm4
         slurm_cmd += '--get-user-env '
-        slurm_cmd += '--export=HOME' # '--export=NONE '
+        slurm_cmd += '--export=ALL' # '--export=NONE '
         slurm_cmd += '--clusters=serial '
         slurm_cmd += '--partition=cm4_inter '
         # slurm_cmd += '--qos=cm4_std '
