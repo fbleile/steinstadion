@@ -66,7 +66,7 @@ def generate_run_commands(command_list=None,
                 raise NotImplementedError("pass single gpu specifier correct gpu specifier")
 
             # gpu_model_spec = f'{gpu_model}:' if gpu_model is not None else ""
-            slurm_cmd += '---gres=gpu:1 '
+            # slurm_cmd += '---gres=gpu:1 '
 
             # if gpu_mtotal is not None:
             #     slurm_cmd += f'--gres=gpumem:{gpu_mtotal} ' # makes sure to select GPU with at least this MB memory
