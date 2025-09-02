@@ -102,13 +102,13 @@ def generate_run_commands(command_list=None,
 
             # Common environment setup for SLURM jobs
             env_setup = (
-                # "bash -c '"
-                "module load slurm_setup && "
-                "module load python && "
-                "source ~/miniconda3/etc/profile.d/conda.sh && "
-                "conda activate steinstadion-env && "
-                "export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion && "
+                "module load slurm_setup\n"
+                "source ~/miniconda3/etc/profile.d/conda.sh\n"
+                "conda activate steinstadion-env\n"
+                "export TMPDIR=/tmp\n"
+                "export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion\n"
             )
+
             
             if not relaunch:
                 cluster_cmds.append(
