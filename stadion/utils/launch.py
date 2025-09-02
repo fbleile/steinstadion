@@ -50,7 +50,7 @@ def generate_run_commands(command_list=None,
         
         # LRZ cluster cm4
         slurm_cmd += '--get-user-env '
-        slurm_cmd += '--export=NONE ' # '--export=NONE '
+        slurm_cmd += '--export=ALL' # '--export=NONE '
         slurm_cmd += '--clusters=serial '
         slurm_cmd += '--partition=serial_std '
         # slurm_cmd += '--qos=cm4_std '
@@ -102,17 +102,17 @@ def generate_run_commands(command_list=None,
 
             # Common environment setup for SLURM jobs
             env_setup = (
-                "bash -c '"
+                # "bash -c '"
                 "module load slurm_setup && "
                 "module load python && "
                 "source ~/miniconda3/etc/profile.d/conda.sh && "
-                "source activate steinstadion-env && " # conda activate / source activate
+                "conda activate steinstadion-env && "
                 "export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion && "
             )
             
             if not relaunch:
                 cluster_cmds.append(
-                    slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + '\'"'
+                    slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + '"' # '\'"'
                 )
             else:
                 relaunch_flags = (
