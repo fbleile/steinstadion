@@ -108,11 +108,11 @@ def generate_run_commands(command_list=None,
                 "source /dss/dsshome1/0C/ge86xim2/miniconda3/etc/profile.d/conda.sh\n"
                 "conda activate steinstadion-env\n"
                 "export TMPDIR=/tmp\n"
+                "export MPLCONFIGDIR=/tmp/matplotlib\n"
+                "mkdir -p /tmp/matplotlib\n"
                 "export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion\n"
             )
 
-
-            
             if not relaunch:
                 cluster_cmds.append(
                     slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + '"' # '\'"'
