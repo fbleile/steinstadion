@@ -303,6 +303,7 @@ class ExperimentManager:
             run_kwargs = hparams[YAML_RUN] if hparams is not None else DEFAULT_RUN_KWARGS
             cmd_args = dict(
                 array_indices=seed_indices,
+                array_throttle=50,
                 mode=self.compute,
                 dry=self.dry,
                 prompt=False,
