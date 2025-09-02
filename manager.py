@@ -208,7 +208,7 @@ class ExperimentManager:
                 mode=self.compute,
                 hours=2,
                 mins=59,
-                n_cpus=2,
+                n_cpus=8,
                 n_gpus=0,
                 mem=2000,
                 prompt=False,
