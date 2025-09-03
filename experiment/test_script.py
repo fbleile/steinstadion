@@ -8,7 +8,7 @@ home = os.environ.get("HOME", "unknown")
 
 print(f"Hello from SLURM_ARRAY_TASK_ID={task_id}")
 print(f"User: {user}, Home: {home}")
-time.sleep(2)
+time.sleep(5)
 print(f"Task {task_id} finished!")
 
 # --- Write to file ---

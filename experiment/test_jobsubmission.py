@@ -24,7 +24,7 @@ dry = not args.submit  # True if --submit is not provided
 # -------------------------------
 # Constants
 # -------------------------------
-MAX_CONCURRENT = 200
+MAX_CONCURRENT = 1
 josubmission_sh = os.path.abspath("experiment/jobsubmission.sh")
 
 # -------------------------------
