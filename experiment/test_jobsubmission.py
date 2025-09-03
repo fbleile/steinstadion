@@ -58,8 +58,6 @@ with open(commands_file, "w") as f:
 # Number of commands
 NUM_COMMANDS = len(commands)
 
-# Python snippet to submit array job directly
-
 submit_cmd = (
     f"sbatch "
     "--get-user-env "
@@ -70,8 +68,10 @@ submit_cmd = (
     f"--mem=1000M "
     f"--time=2:00:00 "
     f"--array=1-{NUM_COMMANDS}%{MAX_CONCURRENT} "
-    f"experiment/jobsubmission.sh {commands_file}"
+    f"--wrap=\"export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion && "
+    f"bash experiment/jobsubmission.sh {commands_file}\""
 )
+
 
 print("Run this command on the login node to submit the array job:")
 if dry:

@@ -32,6 +32,7 @@ from definitions import (
     EXPERIMENT_DATA_SUMMARY,
     YAML_RUN,
     DEFAULT_RUN_KWARGS,
+    SLURM_SUBMISSION_MAX,
 )
 
 
@@ -193,6 +194,16 @@ class ExperimentManager:
             grid_ids = range(len(self.data_grid_config))
         else:
             grid_ids = [None]
+        
+        # define throttle to respect job submition limit
+        if len(grid_ids) > SLURM_SUBMISSION_MAX:
+            raise RuntimeError(
+                    f"Slurm submission limit exceeded: "
+                    f"planned {grid_ids} grid points, but the max allowed is {SLURM_SUBMISSION_MAX}. "
+                    "Execution stopped."
+                )
+        array_throttle = int(SLURM_SUBMISSION_MAX / len(grid_ids))
+        print(f'Array throttle set to: {array_throttle}')
 
         for grid_id in grid_ids:
             cmd_final = cmd
@@ -205,6 +216,7 @@ class ExperimentManager:
             generate_run_commands(
                 array_command=cmd_final,
                 array_indices=range(1, n_datasets + 1),
+                array_throttle=array_throttle,
                 mode=self.compute,
                 hours=2,
                 mins=59,
@@ -268,9 +280,18 @@ class ExperimentManager:
             else:
                 print(f"Taking first {self.n_datasets} data folders")
                 data_found = data_found[:self.n_datasets]
-
         elif self.verbose:
             print(f"\nLaunching experiments for {len(data_found)} data sets.")
+            
+        # define throttle to respect job submition limit
+        if len(methods_config.items()) > SLURM_SUBMISSION_MAX:
+            raise RuntimeError(
+                    f"Slurm submission limit exceeded: "
+                    f"planned {len(methods_config.items())} methods, but the max allowed is {SLURM_SUBMISSION_MAX}. "
+                    "Execution stopped."
+                )
+        array_throttle = int(SLURM_SUBMISSION_MAX / len(methods_config.items()))
+        print(f'Array throttle set to: {array_throttle}')
 
         n_launched, n_methods = 0, 0
         path_data_root = data_found[0].parent
@@ -303,6 +324,7 @@ class ExperimentManager:
             run_kwargs = hparams[YAML_RUN] if hparams is not None else DEFAULT_RUN_KWARGS
             cmd_args = dict(
                 array_indices=seed_indices,
+                array_throttle=array_throttle,
                 mode=self.compute,
                 dry=self.dry,
                 prompt=False,
@@ -361,6 +383,7 @@ class ExperimentManager:
 
         generate_run_commands(
             command_list=[cmd],
+            array_throttle=SLURM_SUBMISSION_MAX,
             mode=self.compute,
             hours=23,
             mins=59,
@@ -431,6 +454,7 @@ class ExperimentManager:
 
         generate_run_commands(
             command_list=[cmd],
+            array_throttle=SLURM_SUBMISSION_MAX,
             mode=self.compute,
             hours=11,
             mins=59,

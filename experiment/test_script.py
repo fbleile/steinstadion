@@ -12,7 +12,7 @@ time.sleep(5)
 print(f"Task {task_id} finished!")
 
 # --- Write to file ---
-output_path = f"experiment/test_{task_id}.txt"
+output_path = f"test_{task_id}.txt"
 with open(output_path, "w") as f:
     f.write(f"Task {task_id} report\n")
     f.write(f"User: {user}\n")
