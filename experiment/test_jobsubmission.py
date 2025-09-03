@@ -1,13 +1,34 @@
 import os
+import argparse
 
-# Number of test sbatch jobs
-N_TEST_JOBS = 10  # adjust for testing
+# -------------------------------
+# Parse command-line argument
+# -------------------------------
+parser = argparse.ArgumentParser(description="Submit a Slurm array job with N test tasks")
+parser.add_argument(
+    "--num-jobs",
+    type=int,
+    default=3,
+    help="Number of test sbatch jobs to deploy (default: 3)"
+)
+parser.add_argument(
+    "--submit",
+    action="store_true",
+    help="If set, actually submit the array job; otherwise dry-run"
+)
+args = parser.parse_args()
+N_TEST_JOBS = args.num_jobs
+dry = not args.submit  # True if --submit is not provided
+
+# -------------------------------
+# Constants
+# -------------------------------
 MAX_CONCURRENT = 200
+myarray_sh = os.path.abspath("experiment/jobsubmission.sh")
 
-# Path to your array job script
-myarray_sh = os.path.abspath("jobsubmission.sh")
-
-# Generate sbatch commands with environment setup and inline Python
+# -------------------------------
+# Generate sbatch commands
+# -------------------------------
 commands = []
 for i in range(1, N_TEST_JOBS + 1):
     cmd = (
@@ -41,4 +62,10 @@ submit_cmd = (
 )
 
 print("Run this command on the login node to submit the array job:")
-print(submit_cmd)
+if dry:
+    print(submit_cmd)
+else:
+    os.system(submit_cmd)
+
+
+# python submit_test_array.py --num-jobs 10 --submit
