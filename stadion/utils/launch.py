@@ -20,6 +20,9 @@ def generate_base_command(module, flags=None):
             base_cmd += f" --{flag}={setting}"
     return base_cmd
 
+def chunk_list(lst, size):
+    for i in range(0, len(lst), size):
+        yield lst[i:i + size]
 
 def generate_run_commands(command_list=None,
                           array_command=None, array_indices=None, array_throttle=None,
@@ -94,46 +97,107 @@ def generate_run_commands(command_list=None,
             slurm_cmd_run += f'-o "{output_path_prefix}slurm-{output_filename}{job_descr}.txt" '
             slurm_cmd_run += f'-D  ./ '
 
-            if is_array_job:
-                if type(array_indices) == range:
-                    slurm_cmd_run += f'--array {array_indices.start}-{array_indices.stop - 1}'
-                    if array_throttle is not None:
-                        slurm_cmd_run += f"%{array_throttle}"
-                else:
-                    slurm_cmd_run += f'--array {",".join([str(ind) for ind in array_indices])}'
+            # if is_array_job:
+            #     if type(array_indices) == range:
+            #         slurm_cmd_run += f'--array {array_indices.start}-{array_indices.stop - 1}'
+            #         if array_throttle is not None:
+            #             slurm_cmd_run += f"%{array_throttle}"
+            #     else:
+            #         slurm_cmd_run += f'--array {",".join([str(ind) for ind in array_indices])}'
 
-            # Common environment setup for SLURM jobs
-            env_setup = (
-                "module load slurm_setup\n"
-                "echo \"HOME=$HOME\"\n"
-                "echo \"USER=$USER\"\n"
-                "source /dss/dsshome1/0C/ge86xim2/miniconda3/etc/profile.d/conda.sh\n"
-                "conda activate steinstadion-env\n"
-                "export TMPDIR=/tmp\n"
-                "export MPLCONFIGDIR=/tmp/matplotlib\n"
-                "mkdir -p /tmp/matplotlib\n"
-                "export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion\n"
-            )
+            # # Common environment setup for SLURM jobs
+            # env_setup = (
+            #     "module load slurm_setup\n"
+            #     "echo \"HOME=$HOME\"\n"
+            #     "echo \"USER=$USER\"\n"
+            #     "source /dss/dsshome1/0C/ge86xim2/miniconda3/etc/profile.d/conda.sh\n"
+            #     "conda activate steinstadion-env\n"
+            #     "export TMPDIR=/tmp\n"
+            #     "export MPLCONFIGDIR=/tmp/matplotlib\n"
+            #     "mkdir -p /tmp/matplotlib\n"
+            #     "export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion\n"
+            # )
 
-            if not relaunch:
-                cluster_cmds.append(
-                    slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + '"' # '\'"'
-                )
-            else:
-                relaunch_flags = (
-                    " --relaunch True "
-                    " --relaunch_str '" + slurm_cmd_run.replace('"', '\\"') + "' "
-                )
-                if relaunch_after is None:
-                    relaunch_flags += f' --relaunch_after {60 * (119 if length == "very_long" else (23 if length == "long" else 3))} '
-                else:
-                    relaunch_flags += f' --relaunch_after {relaunch_after} '
+            # if not relaunch:
+            #     cluster_cmds.append(
+            #         slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + '"' # '\'"'
+            #     )
+            # else:
+            #     relaunch_flags = (
+            #         " --relaunch True "
+            #         " --relaunch_str '" + slurm_cmd_run.replace('"', '\\"') + "' "
+            #     )
+            #     if relaunch_after is None:
+            #         relaunch_flags += f' --relaunch_after {60 * (119 if length == "very_long" else (23 if length == "long" else 3))} '
+            #     else:
+            #         relaunch_flags += f' --relaunch_after {relaunch_after} '
             
-                # add datetime to slurm command only after relaunch flags are set
-                slurm_cmd_run = slurm_cmd_run.replace(
-                    ".out", f"_{datetime.datetime.now().strftime('%d-%m-%H:%M')}.out"
+            #     # add datetime to slurm command only after relaunch flags are set
+            #     slurm_cmd_run = slurm_cmd_run.replace(
+            #         ".out", f"_{datetime.datetime.now().strftime('%d-%m-%H:%M')}.out"
+            #     )
+            #     cluster_cmds.append(slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + relaunch_flags + '"')
+            
+            # helper to chunk array indices into pieces of size <= limit
+            def chunk_list(lst, size):
+                for i in range(0, len(lst), size):
+                    yield lst[i:i + size]
+            
+            max_array_size = 25  # LRZ job submission cap
+            
+            if is_array_job:
+                # we’ll iterate over array chunks instead of one big array
+                array_chunks = list(chunk_list(list(array_indices), max_array_size))
+            else:
+                array_chunks = [None]
+            
+            for chunk in array_chunks:
+                slurm_cmd_run = slurm_cmd
+                unique_id = str(int(time.time()))[-4:]  # last 4 digits of epoch
+                slurm_cmd_run += f'-J "{(output_filename + job_descr)[:6]}{unique_id}" '
+                slurm_cmd_run += f'-o "{output_path_prefix}slurm-{output_filename}{job_descr}.txt" '
+                slurm_cmd_run += f'-D ./ '
+            
+                if is_array_job:
+                    if len(chunk) == 1:
+                        arr_spec = f"{chunk[0]}"
+                    else:
+                        arr_spec = f"{chunk[0]}-{chunk[-1]}"
+                    if array_throttle is not None:
+                        arr_spec += f"%{array_throttle}"
+                    slurm_cmd_run += f'--array {arr_spec} '
+            
+                # Common environment setup
+                env_setup = (
+                    "module load slurm_setup\n"
+                    "echo \"HOME=$HOME\"\n"
+                    "echo \"USER=$USER\"\n"
+                    "source /dss/dsshome1/0C/ge86xim2/miniconda3/etc/profile.d/conda.sh\n"
+                    "conda activate steinstadion-env\n"
+                    "export TMPDIR=/tmp\n"
+                    "export MPLCONFIGDIR=/tmp/matplotlib\n"
+                    "mkdir -p /tmp/matplotlib\n"
+                    "export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion\n"
                 )
-                cluster_cmds.append(slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + relaunch_flags + '"')
+            
+                if not relaunch:
+                    cluster_cmds.append(
+                        slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + '"'
+                    )
+                else:
+                    relaunch_flags = (
+                        " --relaunch True "
+                        " --relaunch_str '" + slurm_cmd_run.replace('"', '\\"') + "' "
+                    )
+                    if relaunch_after is None:
+                        relaunch_flags += f' --relaunch_after {60 * (119 if length == "very_long" else (23 if length == "long" else 3))} '
+                    else:
+                        relaunch_flags += f' --relaunch_after {relaunch_after} '
+            
+                    slurm_cmd_run = slurm_cmd_run.replace(
+                        ".out", f"_{datetime.datetime.now().strftime('%d-%m-%H:%M')}.out"
+                    )
+                    cluster_cmds.append(slurm_cmd_run + ' --wrap "' + env_setup + python_cmd + relaunch_flags + '"')
 
 
         if prompt and not dry:
