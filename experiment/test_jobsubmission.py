@@ -33,12 +33,20 @@ josubmission_sh = os.path.abspath("experiment/jobsubmission.sh")
 commands = []
 for i in range(1, N_TEST_JOBS + 1):
     cmd = (
-        "sbatch --wrap='"
+        "sbatch "
+        "--get-user-env "
+        "--export=NONE "
+        "--clusters=serial "
+        "--partition=serial_std "
+        f"--cpus-per-task=1 "
+        f"--mem=4000M "
+        f"--time=2:00:00 "
+        f"--job-name=test_child_{i} "
+        "--wrap='"
         "module load slurm_setup; "
         "source $HOME/miniconda3/etc/profile.d/conda.sh; "
         "conda activate steinstadion-env; "
-        "python $HOME/steinstadion/experiment/test_script.py'"
-        f" --job-name=test_child_{i}"
+        f"python $HOME/steinstadion/experiment/test_script.py'"
     )
     commands.append(cmd)
 
