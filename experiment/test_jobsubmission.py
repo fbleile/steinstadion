@@ -62,12 +62,13 @@ commands_str = ":::".join(commands)
 NUM_COMMANDS = len(commands)
 
 # Generate the array job submission command
-submit_cmd = f"sbatch --array=1-{NUM_COMMANDS}%200 jobsubmission.sh {commands_file}"
+submit_cmd = f"sbatch --array=1-{NUM_COMMANDS}%200 experiment/jobsubmission.sh {commands_file}"
 
 print("Run this command on the login node to submit the array job:")
 if dry:
     print(submit_cmd)
 else:
+    print(submit_cmd)
     os.system(submit_cmd)
 
 
