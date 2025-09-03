@@ -41,7 +41,7 @@ for i in range(1, N_TEST_JOBS + 1):
         f"python -c 'import os, time; "
         "task_id=os.environ.get(\"SLURM_ARRAY_TASK_ID\", \"0\"); "
         "print(f\"Hello from SLURM_ARRAY_TASK_ID={task_id}\"); "
-        "print(f\"User: {os.environ.get(\\\"USER\\\")}, Home: {os.environ.get(\\\"HOME\\\")} \"); "
+        "print(f\"User: {os.environ.get('USER')}, Home: {os.environ.get('HOME')}\"); "
         "time.sleep(2); "
         "print(f\"Task {task_id} finished!\")'"
         f"\" --job-name=test_child_{i}"
