@@ -62,7 +62,7 @@ NUM_COMMANDS = len(commands)
 submit_cmd = (
     f"sbatch "
     "--get-user-env "
-    "--export=NONE "
+    "--export=ALL "
     "--clusters=serial "
     "--partition=serial_std "
     f"--cpus-per-task=1 "

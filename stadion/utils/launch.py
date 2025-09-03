@@ -55,7 +55,7 @@ def generate_run_commands(command_list=None,
         
         # LRZ cluster serial
         slurm_cmd += '--get-user-env '
-        slurm_cmd += '--export=NONE ' # '--export=ALL ' # 
+        slurm_cmd +=  '--export=ALL ' # '--export=NONE ' #
         slurm_cmd += '--clusters=serial '
         slurm_cmd += '--partition=serial_std '
         # slurm_cmd += '--qos=cm4_std '
