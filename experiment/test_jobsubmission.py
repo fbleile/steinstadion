@@ -35,7 +35,7 @@ for i in range(1, N_TEST_JOBS + 1):
     cmd = (
         "sbatch "
         "--get-user-env "
-        "--export=NONE "
+        "--export=ALL "
         "--clusters=serial "
         "--partition=serial_std "
         f"--cpus-per-task=1 "
