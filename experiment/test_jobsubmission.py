@@ -34,14 +34,14 @@ for i in range(1, N_TEST_JOBS + 1):
     cmd = (
         "sbatch --wrap=\""
         "module load slurm_setup; "
-        f"source $HOME/miniconda3/etc/profile.d/conda.sh; "
+        "source $HOME/miniconda3/etc/profile.d/conda.sh; "
         "conda activate steinstadion-env; "
         "export TMPDIR=/tmp; export MPLCONFIGDIR=/tmp/matplotlib; mkdir -p /tmp/matplotlib; "
         "export PYTHONPATH=$PYTHONPATH:$HOME/steinstadion; "
         f"python -c 'import os, time; "
         "task_id=os.environ.get(\"SLURM_ARRAY_TASK_ID\", \"0\"); "
         "print(f\"Hello from SLURM_ARRAY_TASK_ID={task_id}\"); "
-        "print(f\"User: {os.environ.get(\"USER\")}, Home: {os.environ.get(\"HOME\")} \"); "
+        "print(f\"User: {os.environ.get(\\\"USER\\\")}, Home: {os.environ.get(\\\"HOME\\\")} \"); "
         "time.sleep(2); "
         "print(f\"Task {task_id} finished!\")'"
         f"\" --job-name=test_child_{i}"
@@ -68,4 +68,4 @@ else:
     os.system(submit_cmd)
 
 
-# python submit_test_array.py --num-jobs 10 --submit
+# python experiment/test_jobsubmission.py --num-jobs 2 --submit
