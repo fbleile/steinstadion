@@ -42,11 +42,11 @@ for i in range(1, N_TEST_JOBS + 1):
         f"--mem=4000M "
         f"--time=2:00:00 "
         f"--job-name=test_child_{i} "
-        "--wrap='"
+        "--wrap=\""
         "module load slurm_setup; "
         "source $HOME/miniconda3/etc/profile.d/conda.sh; "
         "conda activate steinstadion-env; "
-        f"python $HOME/steinstadion/experiment/test_script.py'"
+        f"python $HOME/steinstadion/experiment/test_script.py\""
     )
     commands.append(cmd)
 
@@ -55,14 +55,22 @@ with open(commands_file, "w") as f:
     for cmd in commands:
         f.write(cmd + "\n")
 
-# Convert list of commands into a single string using a delimiter
-commands_str = ":::".join(commands)
-
 # Number of commands
 NUM_COMMANDS = len(commands)
 
 # Generate the array job submission command
-submit_cmd = f"sbatch --array=1-{NUM_COMMANDS}%200 experiment/jobsubmission.sh {commands_file}"
+submit_cmd = (
+    f"sbatch "
+    "--get-user-env "
+    "--export=NONE "
+    "--clusters=serial "
+    "--partition=serial_std "
+    f"--cpus-per-task=1 "
+    f"--mem=1000M "
+    f"--time=2:00:00 "
+    f"--array=1-{NUM_COMMANDS}%{MAX_CONCURRENT} "
+    f"experiment/jobsubmission.sh {commands_file}"
+)
 
 print("Run this command on the login node to submit the array job:")
 if dry:
