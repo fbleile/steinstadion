@@ -8,21 +8,28 @@
 #SBATCH -D ./
 # --- Config ---
 MAX_JOBS=200
-# Resolve absolute path of this script
+# --- Paths ---
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 COMMANDS_FILE="$SCRIPT_DIR/commands_list.txt"
+# --- Safety checks ---
+if [[ ! -f "$COMMANDS_FILE" ]]; then
+    echo "Error: commands file '$COMMANDS_FILE' does not exist."
+    exit 1
+fi
+if [[ ! -s "$COMMANDS_FILE" ]]; then
+    echo "Error: commands file '$COMMANDS_FILE' is empty."
+    exit 1
+fi
 # --- Functions ---
 get_current_jobs() {
     # Count all jobs of this user that are not COMPLETED or FAILED on the serial cluster
-    squeue --clusters=serial -u $USER -h -t PD,R,CG,F,TO | wc -l
+    squeue --clusters=serial -u $USER -h -t PD,R,CG | wc -l
 }
-# Parse sbatch command and estimate how many jobs it will create
 count_jobs_in_command() {
     local cmd="$1"
     if [[ "$cmd" =~ --array[=[:space:]]+([0-9,-:]+) ]]; then
-        # Handle --array=0-9 or --array=1-10:2 etc.
         local arr="${BASH_REMATCH[1]}"
-        python3 - <<EOF
+        python - <<EOF
 expr = "$arr"
 total = 0
 for part in expr.split(","):
@@ -36,6 +43,10 @@ for part in expr.split(","):
         total += (end - start)//step + 1
     else:
         total += 1
+if total > $MAX_JOBS:
+    import sys
+    print(f"Error: array sbatch command would submit {total} jobs, exceeding MAX_JOBS={MAX_JOBS}.", file=sys.stderr)
+    sys.exit(1)
 print(total)
 EOF
     else
@@ -43,18 +54,29 @@ EOF
     fi
 }
 # --- Main loop ---
-while IFS= read -r cmd; do
-    [[ -z "$cmd" ]] && continue   # skip empty lines
+while :; do
+    # Read the first line (FIFO)
+    cmd=$(head -n 1 "$COMMANDS_FILE")
+    
+    if [[ -z "$cmd" ]]; then
+        echo "No more commands left in '$COMMANDS_FILE'. Exiting."
+        exit 0
+    fi
+    # Count jobs this command would submit
     needed=$(count_jobs_in_command "$cmd")
+    
+    # Wait until there's enough room
     while true; do
         current=$(get_current_jobs)
         if (( current + needed <= MAX_JOBS )); then
-            echo "Submitting: $cmd"
-            eval "$cmd"
+            echo "$(date '+%Y-%m-%d %H:%M:%S') Submitting: $cmd"
+            bash -c "$cmd"
+            # Remove the executed line from file (pop)
+            tail -n +2 "$COMMANDS_FILE" > "$COMMANDS_FILE.tmp" && mv "$COMMANDS_FILE.tmp" "$COMMANDS_FILE"
             break
         else
             echo "Currently $current jobs on serial cluster, need $needed more. Waiting..."
             sleep 30
         fi
     done
-done < "$COMMANDS_FILE"
+done

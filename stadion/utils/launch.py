@@ -7,6 +7,7 @@ import time
 import warnings
 warnings.formatwarning = lambda msg, category, path, lineno, file: f"{path}:{lineno}: {category.__name__}: {msg}\n"
 
+from definitions import EXPERIMENT_COMMANDS_LIST
 
 def generate_base_command(module, flags=None):
     """ Module is a python file to execute """
@@ -20,9 +21,15 @@ def generate_base_command(module, flags=None):
             base_cmd += f" --{flag}={setting}"
     return base_cmd
 
-def chunk_list(lst, size):
-    for i in range(0, len(lst), size):
-        yield lst[i:i + size]
+def one_line_sbatch(cmd: str) -> str:
+    """Convert multi-line sbatch --wrap to one line and escape $ for SLURM."""
+    import re
+    return re.sub(
+        r'--wrap\s+"(.*)"',
+        lambda m: '--wrap "' + "; ".join(line.strip() for line in m.group(1).splitlines() if line.strip()).replace('$', r'\$') + '"',
+        cmd,
+        flags=re.DOTALL
+    )
 
 def generate_run_commands(command_list=None,
                           array_command=None, array_indices=None, array_throttle=None,
@@ -143,12 +150,17 @@ def generate_run_commands(command_list=None,
         else:
             answer = 'yes'
         if answer == 'yes':
-            for cmd in cluster_cmds:
-                if dry:
-                    print(cmd, end="\n")
-                else:
+            if dry:
+                with open(EXPERIMENT_COMMANDS_LIST, "a") as f:
+                    for cmd in cluster_cmds:
+                        cmd1 = one_line_sbatch(cmd)
+                        print(cmd1)
+                        f.write(cmd1 + "\n")
+            else:
+                for cmd in cluster_cmds:
                     print(cmd, end="\n")
                     os.system(cmd)
+
 
     # deprecated LSF batching system
     elif mode == 'cluster_lsf':

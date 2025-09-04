@@ -35,6 +35,7 @@ EXPERIMENT_PREDS = "predictions"
 EXPERIMENT_SUMMARY = "summary"
 EXPERIMENT_SUMMARY_VALIDATION = "summary_validation"
 EXPERIMENT_DATA_SUMMARY = "data_summary"
+EXPERIMENT_COMMANDS_LIST = "experiment/command_list.txt"
 
 EXPERIMENT_CONFIG_DATA = "data.yaml"
 EXPERIMENT_CONFIG_DATA_GRID = "data_grid.yaml"
