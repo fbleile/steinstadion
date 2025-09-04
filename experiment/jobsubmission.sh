@@ -22,8 +22,20 @@ if [[ ! -s "$COMMANDS_FILE" ]]; then
 fi
 # --- Functions ---
 get_current_jobs() {
-    # Count all jobs of this user that are not COMPLETED or FAILED on the serial cluster
-    squeue --clusters=serial -u $USER -h -t PD,R,CG | wc -l
+    # Count all pending or running tasks (including array tasks) of this user on the serial cluster
+    squeue -u $USER --clusters=serial -h -t PD,R,CG -o "%i" | awk '
+    {
+        gsub(/\[|\]/,"");          # remove brackets
+        split($1, parts, "_");     # parts[1]=jobID, parts[2]=task range
+        if (parts[2] == "") {
+            print 1
+        } else if (parts[2] ~ /-/) {
+            split(parts[2], range, "-")
+            print range[2]-range[1]+1
+        } else {
+            print 1
+        }
+    }' | paste -sd+ - | bc
 }
 count_jobs_in_command() {
     local cmd="$1"
