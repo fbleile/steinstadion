@@ -10,7 +10,7 @@
 MAX_JOBS=200
 # --- Paths ---
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
-COMMANDS_FILE="$SCRIPT_DIR/commands_list.txt"
+COMMANDS_FILE="$SCRIPT_DIR/command_list.txt"
 # --- Safety checks ---
 if [[ ! -f "$COMMANDS_FILE" ]]; then
     echo "Error: commands file '$COMMANDS_FILE' does not exist."
