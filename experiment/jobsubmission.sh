@@ -1,1 +1,60 @@
-#!/bin/bash#SBATCH --job-name=dynamic_submitter#SBATCH --clusters=serial#SBATCH --partition=serial_long#SBATCH --time=12:00:00#SBATCH --cpus-per-task=1#SBATCH --mem=2000M#SBATCH -D ./# --- Config ---MAX_JOBS=200# Resolve absolute path of this scriptSCRIPT_DIR=$(dirname "$(realpath "$0")")COMMANDS_FILE="$SCRIPT_DIR/commands_list.txt"# --- Functions ---get_current_jobs() {    # Count all jobs of this user that are not COMPLETED or FAILED on the serial cluster    squeue --clusters=serial -u $USER -h -t PD,R,CG,F,TO | wc -l}# Parse sbatch command and estimate how many jobs it will createcount_jobs_in_command() {    local cmd="$1"    if [[ "$cmd" =~ --array[=[:space:]]+([0-9,-:]+) ]]; then        # Handle --array=0-9 or --array=1-10:2 etc.        local arr="${BASH_REMATCH[1]}"        python3 - <<EOFexpr = "$arr"total = 0for part in expr.split(","):    if "-" in part:        rng = part.split(":")[0]        step = 1        if ":" in part:            rng, step = part.split(":")            step = int(step)        start, end = map(int, rng.split("-"))        total += (end - start)//step + 1    else:        total += 1print(total)EOF    else        echo 1    fi}# --- Main loop ---while IFS= read -r cmd; do    [[ -z "$cmd" ]] && continue   # skip empty lines    needed=$(count_jobs_in_command "$cmd")    while true; do        current=$(get_current_jobs)        if (( current + needed <= MAX_JOBS )); then            echo "Submitting: $cmd"            eval "$cmd"            break        else            echo "Currently $current jobs on serial cluster, need $needed more. Waiting..."            sleep 30        fi    donedone < "$COMMANDS_FILE"
+#!/bin/bash
+#SBATCH --job-name=dynamic_submitter
+#SBATCH --clusters=serial
+#SBATCH --partition=serial_long
+#SBATCH --time=12:00:00
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2000M
+#SBATCH -D ./
+# --- Config ---
+MAX_JOBS=200
+# Resolve absolute path of this script
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+COMMANDS_FILE="$SCRIPT_DIR/commands_list.txt"
+# --- Functions ---
+get_current_jobs() {
+    # Count all jobs of this user that are not COMPLETED or FAILED on the serial cluster
+    squeue --clusters=serial -u $USER -h -t PD,R,CG,F,TO | wc -l
+}
+# Parse sbatch command and estimate how many jobs it will create
+count_jobs_in_command() {
+    local cmd="$1"
+    if [[ "$cmd" =~ --array[=[:space:]]+([0-9,-:]+) ]]; then
+        # Handle --array=0-9 or --array=1-10:2 etc.
+        local arr="${BASH_REMATCH[1]}"
+        python3 - <<EOF
+expr = "$arr"
+total = 0
+for part in expr.split(","):
+    if "-" in part:
+        rng = part.split(":")[0]
+        step = 1
+        if ":" in part:
+            rng, step = part.split(":")
+            step = int(step)
+        start, end = map(int, rng.split("-"))
+        total += (end - start)//step + 1
+    else:
+        total += 1
+print(total)
+EOF
+    else
+        echo 1
+    fi
+}
+# --- Main loop ---
+while IFS= read -r cmd; do
+    [[ -z "$cmd" ]] && continue   # skip empty lines
+    needed=$(count_jobs_in_command "$cmd")
+    while true; do
+        current=$(get_current_jobs)
+        if (( current + needed <= MAX_JOBS )); then
+            echo "Submitting: $cmd"
+            eval "$cmd"
+            break
+        else
+            echo "Currently $current jobs on serial cluster, need $needed more. Waiting..."
+            sleep 30
+        fi
+    done
+done < "$COMMANDS_FILE"
