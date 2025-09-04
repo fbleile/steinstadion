@@ -2,7 +2,7 @@
 #SBATCH --job-name=dynamic_submitter
 #SBATCH --clusters=serial
 #SBATCH --partition=serial_long
-#SBATCH --time=06:00:00
+#SBATCH --time=12:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=2000M
 #SBATCH -D ./
