@@ -64,14 +64,27 @@ while :; do
     fi
     # Count jobs this command would submit
     needed=$(count_jobs_in_command "$cmd")
-    
     # Wait until there's enough room
     while true; do
         current=$(get_current_jobs)
         if (( current + needed <= MAX_JOBS )); then
             echo "$(date '+%Y-%m-%d %H:%M:%S') Submitting: $cmd"
-            bash -c "$cmd"
-            # Remove the executed line from file (pop)
+            # Run the command and capture both stderr and exit code
+            output=$(bash -c "$cmd" 2>&1)
+            exit_code=$?
+            if [[ $exit_code -ne 0 ]]; then
+                if echo "$output" | grep -q "AssocMaxSubmitJobLimit"; then
+                    echo "Hit submission limit (AssocMaxSubmitJobLimit). Waiting..."
+                    sleep 60
+                    # retry the same command without removing it from file
+                    continue
+                else
+                    echo "Error running command: $output"
+                    # decide: either exit or skip this command
+                    exit 1
+                fi
+            fi
+            # If submission succeeded, remove the executed line from file (pop)
             tail -n +2 "$COMMANDS_FILE" > "$COMMANDS_FILE.tmp" && mv "$COMMANDS_FILE.tmp" "$COMMANDS_FILE"
             break
         else
