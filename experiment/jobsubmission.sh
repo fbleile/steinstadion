@@ -82,6 +82,9 @@ while :; do
             echo "$(date '+%Y-%m-%d %H:%M:%S') Submitting: $cmd"
             # --- Ensure log directory exists ---
             output_file=$(echo "$cmd" | sed -n 's/.*-o[[:space:]]*\([^[:space:]]*\).*/\1/p')
+            # Remove leading/trailing quotes
+            output_file=${output_file%\"}  # remove trailing "
+            output_file=${output_file#\"}  # remove leading "
             if [[ -n "$output_file" ]]; then
                 mkdir -p "$(dirname "$output_file")"
             fi
