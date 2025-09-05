@@ -80,6 +80,11 @@ while :; do
         current=$(get_current_jobs)
         if (( current + needed <= MAX_JOBS )); then
             echo "$(date '+%Y-%m-%d %H:%M:%S') Submitting: $cmd"
+            # --- Ensure log directory exists ---
+            output_file=$(echo "$cmd" | sed -n 's/.*-o[[:space:]]*\([^[:space:]]*\).*/\1/p')
+            if [[ -n "$output_file" ]]; then
+                mkdir -p "$(dirname "$output_file")"
+            fi
             # Run the command and capture both stderr and exit code
             output=$(bash -c "$cmd" 2>&1)
             exit_code=$?
