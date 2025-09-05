@@ -9,7 +9,7 @@
 # --- Config ---
 MAX_JOBS=200
 # --- Paths ---
-COMMANDS_FILE="$HOME/experiment/command_list.txt"
+COMMANDS_FILE="$HOME/steinstadion/experiment/command_list.txt"
 # --- Safety checks ---
 if [[ ! -f "$COMMANDS_FILE" ]]; then
     echo "Error: commands file '$COMMANDS_FILE' does not exist."
