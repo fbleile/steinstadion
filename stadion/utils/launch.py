@@ -7,7 +7,7 @@ import time
 import warnings
 warnings.formatwarning = lambda msg, category, path, lineno, file: f"{path}:{lineno}: {category.__name__}: {msg}\n"
 
-from definitions import EXPERIMENT_COMMANDS_LIST
+from definitions import EXPERIMENT_COMMANDS_LIST, PROJECT_DIR
 
 def generate_base_command(module, flags=None):
     """ Module is a python file to execute """
@@ -102,7 +102,7 @@ def generate_run_commands(command_list=None,
             unique_id = str(int(time.time()))[-4:]  # last 4 digits of epoch
             slurm_cmd_run += f'-J "{(output_filename + job_descr)[:6]}{unique_id}" '
             slurm_cmd_run += f'-o "{output_path_prefix}slurm-{output_filename}{job_descr}.txt" '
-            slurm_cmd_run += f'-D  ./ '
+            slurm_cmd_run += f'-D  {PROJECT_DIR} ' # f'-D  ./ '
 
             if is_array_job:
                 if type(array_indices) == range:
