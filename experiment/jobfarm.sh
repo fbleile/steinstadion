@@ -3,13 +3,13 @@
 #SBATCH -o slurm_logs/jobfarm.%N.%j.out
 #SBATCH -J JobFarm
 #SBATCH --get-user-env
-#SBATCH --clusters=serial
-#SBATCH --partition=serial_long
-#SBATCH --nodes=1
-#SBATCH --tasks-per-node=4
-#SBATCH --cpus-per-task=1
+#SBATCH --clusters=cm4
+#SBATCH --partition=cm4_std
+#SBATCH --nodes=4
+#SBATCH --tasks-per-node=25
+#SBATCH --cpus-per-task=2
 #SBATCH --mem=4000M
-#SBATCH --time=5:59:00
+#SBATCH --time=12:00:00
 #SBATCH --mail-type=NONE
 #SBATCH --export=ALL
 module load slurm_setup
