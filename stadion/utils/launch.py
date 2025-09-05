@@ -115,6 +115,7 @@ def generate_run_commands(command_list=None,
             # Common environment setup for SLURM jobs
             env_setup = (
                 "module load slurm_setup\n"
+                "module load r/4.3.3-gcc13-mkl\n"
                 "echo \"HOME=$HOME\"\n"
                 "echo \"USER=$USER\"\n"
                 "source /dss/dsshome1/0C/ge86xim2/miniconda3/etc/profile.d/conda.sh\n"
@@ -152,10 +153,8 @@ def generate_run_commands(command_list=None,
         if answer == 'yes':
             if dry:
                 with open(EXPERIMENT_COMMANDS_LIST, "a") as f:
-                    for cmd in cluster_cmds:
-                        cmd1 = one_line_sbatch(cmd)
-                        print(cmd1)
-                        f.write(cmd1 + "\n")
+                    for python_cmd in command_list:
+                        f.write(python_cmd + "\n")
             else:
                 for cmd in cluster_cmds:
                     print(cmd, end="\n")
