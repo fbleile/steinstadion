@@ -265,7 +265,11 @@ class ExperimentManager:
             shutil.rmtree(path_results)
 
         # print data sets expected and found
-        data_found = sorted([p for p in path_data.iterdir() if p.is_dir()])
+        data_found = sorted(
+            [p for p in path_data.iterdir() if p.is_dir()],
+            key=lambda p: int(p.name)
+        )
+
         print(f"Found data seeds: {[int(p.name) for p in data_found]}")
         if len(data_found) != self.n_datasets:
             warnings.warn(f"\nNumber of data sets does not match data config "

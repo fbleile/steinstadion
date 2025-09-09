@@ -152,6 +152,9 @@ def generate_run_commands(command_list=None,
             answer = 'yes'
         if answer == 'yes':
             if dry:
+                if is_array_job:
+                    command_list = [array_command.replace("\$SLURM_ARRAY_TASK_ID", str(ind)) for ind in array_indices]
+
                 with open(EXPERIMENT_COMMANDS_LIST, "a") as f:
                     for python_cmd in command_list:
                         f.write(python_cmd + "\n")
