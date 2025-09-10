@@ -22,9 +22,10 @@ export MPLCONFIGDIR=/tmp/matplotlib
 mkdir -p /tmp/matplotlib
 export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion
 # Use the existing command list
-taskdb="experiment/command_list.txt"
+taskdb="experiment/command_list"
+txt_file="{$taskdb}.txt"
 # delete prev jobfarm db
 rm -f "{$taskdb}.db"
 rm -rf "{$taskdb}.txt_res"
 # Start JobFarm
-jobfarm start $taskdb
+jobfarm start $txtfile
