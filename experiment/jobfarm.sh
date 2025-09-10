@@ -7,10 +7,10 @@
 #SBATCH --partition=cm4_tiny
 #SBATCH --qos=cm4_tiny
 #SBATCH --nodes=1
-#SBATCH --tasks-per-node=1
-#SBATCH --cpus-per-task=9
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=224
 #SBATCH --mem=1000M
-#SBATCH --time=12:00:00
+#SBATCH --time=2:00:00
 #SBATCH --mail-type=NONE
 #SBATCH --export=ALL
 module load slurm_setup
