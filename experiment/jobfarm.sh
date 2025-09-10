@@ -4,13 +4,13 @@
 #SBATCH -J JobFarm
 #SBATCH --get-user-env
 #SBATCH --clusters=cm4
-#SBATCH --partition=cm4_tiny
-#SBATCH --qos=cm4_tiny
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=224
-#SBATCH --mem=1000M
-#SBATCH --time=2:00:00
+#SBATCH --partition=cm4_std
+#SBATCH --qos=cm4_std
+#SBATCH --nodes=2
+#SBATCH --ntasks=200
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=10000M
+#SBATCH --time=24:00:00
 #SBATCH --mail-type=NONE
 #SBATCH --export=ALL
 module load slurm_setup
