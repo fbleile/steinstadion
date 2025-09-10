@@ -5,7 +5,7 @@
 #SBATCH --get-user-env
 #SBATCH --clusters=cm4
 #SBATCH --partition=cm4_tiny
-#SBATCH --qos=cm4_std
+#SBATCH --qos=cm4_tiny
 #SBATCH --nodes=1
 #SBATCH --tasks-per-node=1
 #SBATCH --cpus-per-task=9
