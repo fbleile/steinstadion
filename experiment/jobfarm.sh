@@ -4,11 +4,11 @@
 #SBATCH -J JobFarm
 #SBATCH --get-user-env
 #SBATCH --clusters=cm4
-#SBATCH --partition=cm4_std
+#SBATCH --partition=cm4_tiny
 #SBATCH --qos=cm4_std
-#SBATCH --nodes=2
-#SBATCH --tasks-per-node=2
-#SBATCH --cpus-per-task=2
+#SBATCH --nodes=1
+#SBATCH --tasks-per-node=1
+#SBATCH --cpus-per-task=9
 #SBATCH --mem=1000M
 #SBATCH --time=12:00:00
 #SBATCH --mail-type=NONE
