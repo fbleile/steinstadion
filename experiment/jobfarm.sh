@@ -24,6 +24,7 @@ export PYTHONPATH=$PYTHONPATH:/dss/dsshome1/0C/ge86xim2/steinstadion
 # Use the existing command list
 taskdb="experiment/command_list"
 txt_file="{$taskdb}.txt"
+echo "$txt_file"
 # delete prev jobfarm db
 rm -f "{$taskdb}.db"
 rm -rf "{$taskdb}.txt_res"
