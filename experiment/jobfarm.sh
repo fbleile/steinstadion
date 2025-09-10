@@ -6,10 +6,10 @@
 #SBATCH --clusters=cm4
 #SBATCH --partition=cm4_std
 #SBATCH --qos=cm4_std
-#SBATCH --nodes=4
-#SBATCH --tasks-per-node=25
+#SBATCH --nodes=1
+#SBATCH --tasks-per-node=2
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=10000M
+#SBATCH --mem=1000M
 #SBATCH --time=12:00:00
 #SBATCH --mail-type=NONE
 #SBATCH --export=ALL

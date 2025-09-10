@@ -1,6 +1,7 @@
 import warnings
 warnings.formatwarning = lambda msg, category, path, lineno, file: f"{path}:{lineno}: {category.__name__}: {msg}\n"
 
+import shutil
 import importlib.util
 import os
 import json
@@ -15,7 +16,6 @@ from contextlib import contextmanager
 import math
 import torch
 from pprint import pprint
-
 import numpy as onp
 import jax.numpy as jnp
 import pandas as pd
@@ -116,7 +116,14 @@ def get_id(path):
 
 
 def get_git_hash_long():
-    return subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip().decode(sys.stdout.encoding)
+    if shutil.which("git") is None:
+        return "nogit"
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"]
+        ).strip().decode(sys.stdout.encoding or "utf-8")
+    except Exception:
+        return "unknown"
 
 
 def cartesian_dict(d):
