@@ -28,4 +28,4 @@ txt_file="{$taskdb}.txt"
 rm -f "{$taskdb}.db"
 rm -rf "{$taskdb}.txt_res"
 # Start JobFarm
-jobfarm start $txtfile
+jobfarm start $txt_file
