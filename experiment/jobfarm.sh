@@ -2,6 +2,8 @@
 #SBATCH -D /dss/dsshome1/0C/ge86xim2/steinstadion
 #SBATCH -o slurm_logs/jobfarm.%N.%j.out
 #SBATCH -J JobFarm
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=fabian.bleile@posteo.de
 #SBATCH --get-user-env
 #SBATCH --clusters=cm4
 #SBATCH --partition=cm4_std

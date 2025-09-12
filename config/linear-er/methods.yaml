@@ -1,3 +1,5 @@
+---
+
 gies:
   n_samples: 1000
   __run__:
@@ -6,12 +8,13 @@ gies:
     hours: 0
     mins: 20
 
+
 igsp:
   n_samples: 1000
   alpha: 0.003
   ci_test: gaussian
   rank_fail_add: 0.0001
-  rank_check_tol: 1.0e-06
+  rank_check_tol: 0.000001
   __run__:
     n_cpus: 1
     n_gpus: 0
@@ -34,7 +37,6 @@ dcdi:
     mem: 4000
     hours: 23
     mins: 59
-
 
 llc:
   reg_coeff: 0.1
