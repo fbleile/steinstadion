@@ -11,7 +11,6 @@
 #SBATCH --nodes=2
 #SBATCH --ntasks=200
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=10000M
 #SBATCH --time=24:00:00
 #SBATCH --mail-type=NONE
 #SBATCH --export=ALL
