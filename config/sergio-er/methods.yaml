@@ -177,7 +177,7 @@ ours-linear_u_diag:
   # kernel
   kernel: rbf_tilt
 
-  bandwidth: 7.0
+  bandwidth: 3.0
   reg_strength: 0.1
 
   # optimization
@@ -233,7 +233,7 @@ ours-lnl_u_diag:
   kernel: rbf_tilt
 
   bandwidth: 7.0
-  reg_strength: 0.1
+  reg_strength: 0.01
 
   # optimization
   batch_size: 512
