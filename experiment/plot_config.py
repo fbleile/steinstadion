@@ -149,8 +149,8 @@ METHODS_CONFIG = [
     ("dcdi",                COLORS[0], False, "DCDI"),
     ("llc",                 COLORS[1], True, "LLC"),
     ("nodags",              COLORS[1], False, "NODAGS"),
-    ("kds-linear_u_diag", COLORS[2], True, r"\textbf{KDS (Linear)}"),
-    ("kds-lnl_u_diag", COLORS[2], False, r"\textbf{KDS (MLP)}"),
+    ("kds-linear_u_diag", COLORS[2], True, r"KDS (Linear)"),
+    ("kds-lnl_u_diag", COLORS[2], False, r"KDS (MLP)"),
     ("ours-linear_u_diag", COLORS[3], True, r"\textbf{SKDS (Linear)}"),
     ("ours-lnl_u_diag", COLORS[3], False, r"\textbf{SKDS (MLP)}"),
     (TRUE,                  None,      True, "True"),
@@ -226,6 +226,15 @@ METRICS_NAMING = {
     "wasser_test": r"$W_2$",
     "mse_test": r"MSE",
     "relmse_test": r"relMSE",
+}
+
+DATA_TYPES_NAMING = {
+    "linear-er": r"Cyclic Linear SDEs (Erd\H{o}s--R\'enyi causal structure)",
+    "linear-sf": r"Cyclic Linear SDEs (scale-free causal structure)",
+    "scm-er": r"Cyclic Linear SCMs (Erd\H{o}s--R\'enyi causal structure)",
+    "scm-sf": r"Cyclic Linear SCMs (scale-free causal structure)",
+    "sergio-er": r"SERGIO (Erd\H{o}s--R\'enyi causal structure)",
+    "sergio-sf": r"SERGIO (scale-free causal structure)",
 }
 
 

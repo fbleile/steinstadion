@@ -359,7 +359,7 @@ def make_summary(summary_path, data_paths, result_paths, kwargs):
 
     # sanity checks
     if kwargs.train_validation:
-        modes = [(True, "median")] # [(False, "mean"), (True, "median")]
+        modes = [(False, "mean"), (True, "median")]
     else:
         modes = [(True, "mean")]
     
@@ -413,7 +413,7 @@ def make_summary(summary_path, data_paths, result_paths, kwargs):
                                 "wasser_test",
                                 "mse_test",
                                 "relmse_test",
-                              ], skip_plot=True) #j != (len(modes) - 1)
+                              ], skip_plot=j != (len(modes) - 1))
         
         # Write best hyperparams to config
         if kwargs.train_validation and kwargs.inject_hyperparams:

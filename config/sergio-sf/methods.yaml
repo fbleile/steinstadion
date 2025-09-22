@@ -121,6 +121,10 @@ kds-lnl_u_diag:
   # kernel
   kernel: rbf
 
+  # objective
+  objective_fun: kds
+  estimator: linear
+
   bandwidth: 3.0
   reg_strength: 0.1
 

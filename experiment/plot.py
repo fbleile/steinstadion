@@ -317,7 +317,6 @@ def benchmark_summary(kwargs, save_path, method_results_input, samples_all, para
     if only_metrics is not None and only_metrics == METRICS_CHECKS:
         return
 
-    
     if skip_plot:
         return
     """ ------------ Metric figures ------------ """
