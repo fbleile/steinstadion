@@ -237,6 +237,15 @@ DATA_TYPES_NAMING = {
     "sergio-sf": r"SERGIO (scale-free causal structure)",
 }
 
+DATA_TYPES_SHORT_NAMING = {
+    "linear-er": r"Cyclic Linear SDEs",
+    "linear-sf": r"Cyclic Linear SDEs",
+    "scm-er": r"Cyclic Linear SCMs",
+    "scm-sf": r"Cyclic Linear SCMs",
+    "sergio-er": r"SERGIO",
+    "sergio-sf": r"SERGIO",
+}
+
 
 # metrics
 METRICS_HIGHER_BETTER = [

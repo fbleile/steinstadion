@@ -1,0 +1,17 @@
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccccc}
+\hline
+Baseline / Dataset & linear-er & linear-sf & scm-er & scm-sf & sergio-er & sergio-sf \\
+\hline
+GIES & \textcolor{red}{$\ast$} /  &  / $\ast$ & \textcolor{red}{$\ast$} /  & \textcolor{red}{$\ast$} / $\ast$ & $\ast$ / $\ast$ & $\ast$ / $\ast$ \\
+IGSP & \textcolor{red}{$\ast$} / $\ast$ &  / $\ast$ & $\ast$ / $\ast$ &  / $\ast$ & $\ast$ / $\ast$ & $\ast$ / $\ast$ \\
+DCDI &  / $\ast$ & $\ast$ / $\ast$ & $\ast$ / $\ast$ & $\ast$ / $\ast$ &  / $\ast$ &  / $\ast$ \\
+LLC & \textcolor{red}{$\ast$} / $\ast$ &  / $\ast$ & $\ast$ / $\ast$ &  / $\ast$ & $\ast$ / $\ast$ & $\ast$ / $\ast$ \\
+NODAGS & \textcolor{red}{$\ast$} / $\ast$ &  / $\ast$ & $\ast$ / $\ast$ &  / $\ast$ &  / $\ast$ &  / $\ast$ \\
+KDS (Linear) & \textcolor{red}{$\ast$} / \textcolor{red}{$\ast$} & $\ast$ /  & $\ast$ / $\ast$ & $\ast$ / $\ast$ & $\ast$ / $\ast$ & $\ast$ / $\ast$ \\
+KDS (MLP) & \textcolor{red}{$\ast$} / \textcolor{red}{$\ast$} &  /  &  /  &  /  & $\ast$ /  &  /  \\
+\hline
+\end{tabular}
+\caption{Significance tests for \textbf{SKDS (MLP)}. Black star indicates our method significantly outperforms the baseline; red star indicates baseline significantly outperforms ours. Each cell shows MSE / Wasserstein results.}
+\end{table}
