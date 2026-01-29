@@ -68,21 +68,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Reference
 
-Upcoming ArXiv Paper: [Title Placeholder]  
-  (Will be linked here once available)
+The paper is published on arxiv.org: [Efficient Learning of Stationary Diffusions with Stein-type Discrepancies](https://arxiv.org/abs/2601.16597) 
 
-## ToDo
-
-
-- Add detailed project description and goals here.
-- Document additional usage examples or tutorials.
-- Include information about expected input/output formats.
-- Add references to other related projects or papers.
-- Consider adding a FAQ or troubleshooting section.
-- Link to your contact info, issue tracker, or contribution guidelines.
-- A **detailed explanation** of the methodology or algorithms.
-- **Screenshots** or **plots** of key results.
-- Information about **file structure** and **data format**.
-- **Citation instructions** for your work.
-- Links to **video presentations** or demos if any.
-- **Contributing guidelines** and **code of conduct** if you expect collaborators.
