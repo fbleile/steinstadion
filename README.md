@@ -8,7 +8,7 @@ The main attribution is the newly proposed loss function, called 'Stein-Type Ker
 
 ## Credits
 
-This project is based on the work:
+We thank Lorch for publishing such a clean codebase:
 
 Lorch, Krause and Schölkopf.  
 *Causal Modeling with Stationary Diffusions*.  
